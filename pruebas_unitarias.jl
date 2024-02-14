@@ -30,5 +30,15 @@ targets = dataset[:,5];
 # --------------------------------------------------------------------------
 
 min_val, max_val = calculateMinMaxNormalizationParameters(inputs)
+#= Solo para el print sin el Float32
+min_val_float64 = convert(Array{Float64}, min_val)
+max_val_float64 = convert(Array{Float64}, max_val)=#
 println("Minimum values per column: ", min_val)
 println("Maximum values per column: ", max_val)
+
+mean_col, std_col = calculateZeroMeanNormalizationParameters(inputs)
+#= Solo para el print sin el Float32
+mean_col_float64 = convert(Array{Float64}, mean_col)
+std_col_float64 = convert(Array{Float64}, std_col)=#
+println("Mean values per column: ", mean_col)
+println("Standart Deviation values per column: ", std_col)

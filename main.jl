@@ -10,6 +10,7 @@ using Flux;
 using Flux.Losses;
 using FileIO;
 using DelimitedFiles;
+using Statistics;
 
 # PARTE 1
 # --------------------------------------------------------------------------
@@ -64,12 +65,15 @@ function calculateMinMaxNormalizationParameters(dataset::AbstractArray{<:Real,2}
     # duvuelve una tupla con
         # matriz de 1 fila -> min de cada columna
         # matriz de 1 fila -> max de cada columna
-    min_col_value = minimum(dataset, dims=1)
-    max_col_value = maximum(dataset, dims=1)
-    return (min_col_value, max_col_value)
+    min_col = minimum(dataset, dims=1)
+    max_col = maximum(dataset, dims=1)
+    return (min_col, max_col)
 end;
 
 function calculateZeroMeanNormalizationParameters(dataset::AbstractArray{<:Real,2}) 
+    mean_col = mean(dataset, dims=1)
+    std_col = std(dataset, dims=1)
+    return (mean_col, std_col)
 end;
 
 #=
