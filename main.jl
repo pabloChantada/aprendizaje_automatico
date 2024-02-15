@@ -165,10 +165,11 @@ function accuracy(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,
 =#
 
 # PARTE 7
+#=
 function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutputs::Int;
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology))) 
     # topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
-    # global ann, numInputsLayer
+    # global ann, numInputsLayer para usar fuera de la funcion
     @assert !isempty(topology) "No hay capas ocultas"
     
     ann = Chain()
@@ -181,18 +182,49 @@ function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutp
     ann = Chain(ann..., numOutputs, softmax)
     return ann
 end;
-
+=#
 #PARTE 8
-#=
+
 # BUCLE WHILE SOLO AQUI PARA ITERAR EL ENTRENAMIENTO
 # EL OPTIMIZADOR SE CREA FUERA DEL BUCLE
 function trainClassANN(topology::AbstractArray{<:Int,1},
     dataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01)
+    #=
+    topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
+    dataset = (inputs, targets) -> numero de neuronas de entrada y salida
+    Criterios de Parada
+        maxIterations
+        minLoss
+        learningRate
+    TRASPONER LAS MATRICES
+    =#
+    ann = buildClassANN()
+    # mirar bien inputs y targets, seguramente este mal
+    inputs = dataset[:,1:4];
+    inputs = convert(AbstractArray{<:Real,2},inputs);
+    targets = dataset[:,5];
+    opt_state = Flux.setup(Adam(learningRate), ann)
+    loss(model, x, y) = Losses.binarycrossentropy(model(x), y) 
+    loss_dict = {}
+    counter = 0
+    while counter != maxEpochs
+        Flux.train!(loss, ann, [(inputs', targets')], opt_state);
+        loss_dict[counter] = loss
+        counter += 1
+    end
+    return (ann, loss)
+end;
 
 function trainClassANN(topology::AbstractArray{<:Int,1},
     (inputs, targets)::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01)
-=#
+
+    if size(targets, 2) > 1
+        targets = reshape(targets, (:, 1))
+    end;
+    dataset = (inputs, targets)
+    trainClassANN(topology, dataset, transferFunctions, maxEpochs, minLoss, learningRate)
+end;
