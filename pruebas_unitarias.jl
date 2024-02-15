@@ -84,8 +84,11 @@ println("Incompleta con copy: ",new_normalize_values[1:15])
 
 # PARTE 7
 # --------------------------------------------------------------------------
-#= uncoment to use
-
+#=
+# topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
+topology = [15, 4]
+ann = buildClassANN(length(inputs), topology, 4)
+println("Red: ", ann)
 =#
 
 # PARTE 8

@@ -151,8 +151,10 @@ end;
 function classifyOutputs(outputs::AbstractArray{<:Real,1}; threshold::Real=0.5)
 
 function classifyOutputs(outputs::AbstractArray{<:Real,2}; threshold::Real=0.5)
+=#
 
 # PARTE 6
+#=
 function accuracy(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1})
 
 function accuracy(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2})
@@ -160,14 +162,30 @@ function accuracy(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}
 function accuracy(outputs::AbstractArray{<:Real,1}, targets::AbstractArray{Bool,1}; threshold::Real=0.5)
 
 function accuracy(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; threshold::Real=0.5)
+=#
 
-# BUCLE WHILE SOLO AQUI PARA ITERAR EL ENTRENAMIENTO
-# EL OPTIMIZADOR SE CREA FUERA DEL BUCLE
 # PARTE 7
 function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutputs::Int;
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology))) 
+    # topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
+    # global ann, numInputsLayer
+    @assert !isempty(topology) "No hay capas ocultas"
+    
+    ann = Chain()
+    numInputsLayer = numInputs
+    for numOutputsLayer = topology
+        ann = Chain(ann..., Dense(numInputsLayer, numOutputsLayer, transferFunctions[1]))
+        numInputsLayer = numOutputsLayer
+    end;
+    # Ultima capa
+    ann = Chain(ann..., numOutputs, softmax)
+    return ann
+end;
 
 #PARTE 8
+#=
+# BUCLE WHILE SOLO AQUI PARA ITERAR EL ENTRENAMIENTO
+# EL OPTIMIZADOR SE CREA FUERA DEL BUCLE
 function trainClassANN(topology::AbstractArray{<:Int,1},
     dataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
@@ -176,4 +194,5 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
 function trainClassANN(topology::AbstractArray{<:Int,1},
     (inputs, targets)::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
-    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01) =#
+    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01)
+=#
