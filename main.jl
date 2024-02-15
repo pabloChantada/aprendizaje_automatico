@@ -156,12 +156,54 @@ function classifyOutputs(outputs::AbstractArray{<:Real,2}; threshold::Real=0.5)
 # PARTE 6
 #=
 function accuracy(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1})
+    #Las matrices targets y outputs deben tener la misma longitud.
+    @assert length(targets) == length(outputs)  
+    #Divide el número de coincidencias entre el tamaño del vector targets para saber la media de aciertos.
+    return sum(targets .== outputs) / length(targets)
+end
 
 function accuracy(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2})
+    #Las matrices targets y outputs deben tener las mismas dimensiones.
+    @assert size(targets) == size(outputs) 
+    # Si ambas matrices tienen una sola columna:
+    if size(targets, 2) == 1 && size(outputs, 2) == 1
+        #Llama a la función accuracy creada enteriormente.
+        return accuracy(vec(targets), vec(outputs))
+    # Si ambas matrices tienen más de una columna
+    else
+    #calcula la cantidad de diferencias entre las dos matrices, fila por fila.
+        mismatches = sum(targets .!= outputs, dims=2)
+        #Cuenta el número de filas con al menos una diferencia, y lo divide entre 
+        #el número total de filas, valor el cual se resta de 1 para obtener la precisión.
+        return 1.0 - count(mismatches .> 0) / size(targets, 1)
+    end
+end
 
 function accuracy(outputs::AbstractArray{<:Real,1}, targets::AbstractArray{Bool,1}; threshold::Real=0.5)
-
+    #Los vectores targets y outputs deben tener la misma longitud.
+    @assert length(targets) == length(outputs) 
+    #compara cada elemento del vector outputs con el umbral especificado y devuelve un vector
+    #cuyos elementos indican si el valor es mayor o igual al umbral.
+    outputs_bool = outputs .>= threshold
+    #Llamamos a la función creada antes y esta se encargará de comparar los vectores booleanos targets y outputs_bool y calcular la precisión del modelo.
+    return accuracy(targets, outputs_bool)
+end
+    
 function accuracy(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; threshold::Real=0.5)
+    #Las matrices targets y outputs deben tener las mismas dimensiones
+    @assert size(targets) == size(outputs) 
+    #Comprueba si la matriz outputs tiene una sola columna.
+    if size(outputs, 2) == 1
+        # outputs tiene una sola columna, llamamos a la función accuracy creada anteriormente.
+        return accuracy(targets[:, 1], outputs[:, 1])
+    else
+        #Llamamos a la función classifyOutputs que convierte la matriz de valores reales outputs 
+        #en una matriz de valores booleanos.
+        outputs_bool = classifyOutputs(outputs)
+        #Llamamos a la función creada antes y esta se encargará de comparar los vectores booleanos targets y outputs_bool y calcular la precisión del modelo.
+        return accuracy(targets, outputs_bool)
+    end
+end
 =#
 
 # PARTE 7
