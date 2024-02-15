@@ -28,7 +28,7 @@ targets = dataset[:,5];
 
 # PARTE 2
 # --------------------------------------------------------------------------
-
+#= uncoment to use
 min_val, max_val = calculateMinMaxNormalizationParameters(inputs)
 #= Solo para el print sin el Float32
 min_val_float64 = convert(Array{Float64}, min_val)
@@ -42,3 +42,54 @@ mean_col_float64 = convert(Array{Float64}, mean_col)
 std_col_float64 = convert(Array{Float64}, std_col)=#
 println("Mean values per column: ", mean_col)
 println("Standart Deviation values per column: ", std_col)
+=#
+
+# PARTE 3
+# --------------------------------------------------------------------------
+#= uncoment to use
+normalize_values = normalizeMinMax!(inputs, calculateMinMaxNormalizationParameters(inputs))
+println("Completa: ",normalize_values[1:15])
+normalize_values = normalizeMinMax!(inputs)
+println("Incompleta: ",normalize_values[1:15])
+normalize_values = normalizeMinMax(inputs, calculateMinMaxNormalizationParameters(inputs))
+println("Completa con copy: ",normalize_values[1:15])
+normalize_values = normalizeMinMax(inputs)
+println("Incompleta con copy: ",normalize_values[1:15])
+=#
+
+# PARTE 4
+# --------------------------------------------------------------------------
+#= uncoment to use
+new_normalize_values = normalizeZeroMean!(inputs, calculateZeroMeanNormalizationParameters(inputs))
+println("Completa: ",new_normalize_values[1:15])
+new_normalize_values = normalizeZeroMean!(inputs)
+println("Incompleta: ",new_normalize_values[1:15])
+new_normalize_values = normalizeZeroMean(inputs, calculateZeroMeanNormalizationParameters(inputs))
+println("Completa con copy: ",new_normalize_values[1:15])
+new_normalize_values = normalizeZeroMean(inputs)
+println("Incompleta con copy: ",new_normalize_values[1:15])
+=#
+
+# PARTE 5
+# --------------------------------------------------------------------------
+#= uncoment to use
+
+=#
+
+# PARTE 6
+# --------------------------------------------------------------------------
+#= uncoment to use
+
+=#
+
+# PARTE 7
+# --------------------------------------------------------------------------
+#= uncoment to use
+
+=#
+
+# PARTE 8
+# --------------------------------------------------------------------------
+#= uncoment to use
+
+=#
