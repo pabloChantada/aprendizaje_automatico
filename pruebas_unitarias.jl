@@ -26,6 +26,12 @@ targets = dataset[:,5];
 # PARTE 1
 # --------------------------------------------------------------------------
 
+# Seleccionar una columna para codificar en one-hot
+
+encoded = oneHotEncoding(targets)
+
+# Mostrar el resultado
+println(encoded)
 # PARTE 2
 # --------------------------------------------------------------------------
 #= uncoment to use
