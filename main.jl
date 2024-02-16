@@ -11,6 +11,7 @@ using Flux.Losses;
 using FileIO;
 using DelimitedFiles;
 using Statistics;
+using Random;
 
 # PARTE 1
 # --------------------------------------------------------------------------
@@ -237,14 +238,9 @@ end;
 
 # MIRAR COMO TESTEAR
 function trainClassANN(topology::AbstractArray{<:Int,1},
-    trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
-    validationDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}=
-    (Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0,0)),
-    testDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}=
-    (Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0,0)),
+    dataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
-    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01,
-    maxEpochsVal::Int=20) 
+    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01)
     #=
     topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
     Criterios de Parada
@@ -270,32 +266,43 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     end;
     return (ann, loss_data)
 end;
-#=
+
 function trainClassANN(topology::AbstractArray{<:Int,1},
-    trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
-    validationDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}}=
-    (Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0)),
-    testDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}}=
-    (Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0)),
+    (inputs, targets)::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
-    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01,
-    maxEpochsVal::Int=20)
+    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01) 
 
     if size(targets, 2) > 1
         targets = reshape(targets, (:, 1))
     end;
     dataset = (inputs, targets)
-    trainClassANN(topology, dataset, transferFunctions, maxEpochs, minLoss, learningRate)
+    trainClassANN(topology, dataset; transferFunctions, maxEpochs, minLoss, learningRate)
 end;
-=#
 
 # PARTE 9
 # --------------------------------------------------------------------------
 
 function holdOut(N::Int, P::Real)
-
+    # N -> numero de patrones
+    # P -> valor entre 0 y 1, indica el porcentaje para el test
+    # numero de patrones para el teset
+    @assert P > 0 && P < 1 "Valores fuera de rango"
+    test_size = Int(floor(N * P))
+    # permutamos los datos
+    index_perm = randperm(N)
+    index_test = index_perm[1:test_size]
+    index_train = index_perm[test_size+1:end]
+    @assert size(index_test) + size(index_train) == N
+    return(index_train, index_test)
 end;
 
 function holdOut(N::Int, Pval::Real, Ptest::Real)
-
+    # N -> numero de patrones
+    # Pval -> valor entre 0 y 1, tasa del conjunto validacion
+    # Ptest -> valor entre 0 y 1, tasa del conjunto validacion
+    index_test = holdOut(N, Ptest)
+    index_val = holdOut(N, Pval)
+    index_train = index_test[1] + index_val[1]
+    @assert size(index_test) + size(index_train) + size(index_val) == N
+    return (index_train, index_val[2], index_test[2])
 end;

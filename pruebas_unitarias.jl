@@ -2,6 +2,7 @@
 TESTEAR PARTES:
     6 - modificar
     8
+    9
 =#
 
 include("main.jl")
@@ -153,6 +154,7 @@ test_classifyOutputs_single_element()
 
 # PARTE 6
 # --------------------------------------------------------------------------
+#= uncoment to use
 # Test para la función accuracy con vectores de valores booleanos
 function test_accuracy_bool_vectors()
     # Datos de prueba
@@ -218,6 +220,7 @@ test_accuracy_bool_vectors()
 # test_accuracy_bool_matrices_single_column()
 # test_accuracy_real_vector_default_threshold()
 # test_accuracy_real_matrices_custom_threshold()
+=#
 
 # PARTE 7
 # --------------------------------------------------------------------------
@@ -248,3 +251,62 @@ println(loss)
 
 # PARTE 9
 # --------------------------------------------------------------------------
+#=
+using Test
+function test_holdOut(N::Int, P::Real)
+    @test begin
+        # Check for valid percentage
+        if P <= 0 || P >= 1
+            throw(ArgumentError("P must be between 0 and 1"))
+        end
+
+        # Call the function
+        (train_indices, test_indices) = holdOut(N, P)
+
+        # Check sizes
+        @assert length(train_indices) + length(test_indices) == N
+        # No duplicates
+        @assert all(unique(train_indices) == train_indices)
+        @assert all(unique(test_indices) == test_indices)
+        # Indices within range
+        @assert all(i >= 1 && i <= N for i in train_indices)
+        @assert all(i >= 1 && i <= N for i in test_indices)
+    end
+end
+function test_holdOut3(N::Int, Pval::Real, Ptest::Real)
+    @test begin
+        # Check for valid percentages
+        if Pval <= 0 || Pval >= 1
+            throw(ArgumentError("Pval must be between 0 and 1"))
+        end
+        if Ptest <= 0 || Ptest >= 1
+            throw(ArgumentError("Ptest must be between 0 and 1"))
+        end
+
+        # Call the function
+        (train_indices, val_indices, test_indices) = holdOut(N, Pval, Ptest)
+
+        # Check sizes
+        @assert length(train_indices) + length(val_indices) + length(test_indices) == N
+        # No duplicates within each set
+        @assert all(unique(train_indices) == train_indices)
+        @assert all(unique(val_indices) == val_indices)
+        @assert all(unique(test_indices) == test_indices)
+        # Indices within range
+        @assert all(i >= 1 && i <= N for i in train_indices)
+        @assert all(i >= 1 && i <= N for i in val_indices)
+        @assert all(i >= 1 && i <= N for i in test_indices)
+    end
+end
+
+# Run tests for various cases
+test_holdOut3(100, 0.1, 0.2)
+test_holdOut3(1000, 0.3, 0.1)
+test_holdOut3(50, 0.25, 0.25)
+# Run tests for various cases
+test_holdOut(100, 0.2)
+test_holdOut(1000, 0.1)
+test_holdOut(50, 0.5)
+
+run_tests()
+=#
