@@ -1,19 +1,7 @@
 #=
-# Crear un vector de ejemplo con valores booleanos
-feature_bool = [true, false, true, true, false]
-
-# Probar la función oneHotEncoding para un único parámetro feature de tipo AbstractArray{Bool,1}
-matriz_resultante = oneHotEncoding(feature_bool)
-println("Matriz resultante para la función oneHotEncoding con un solo parámetro:")
-println(matriz_resultante)
-
-# Crear un vector de ejemplo con valores de diferentes clases
-feature_clases = ["A", "B", "A", "C", "B", "C"]
-
-# Probar la función oneHotEncoding para dos parámetros feature y classes de tipo AbstractArray{<:Any,1}
-matriz_resultante = oneHotEncoding(feature_clases, unique(feature_clases))
-println("\nMatriz resultante para la función oneHotEncoding con dos parámetros:")
-println(matriz_resultante)
+TESTEAR PARTES:
+    6 - modificar
+    8
 =#
 
 include("main.jl")
@@ -25,6 +13,48 @@ targets = dataset[:,5];
 
 # PARTE 1
 # --------------------------------------------------------------------------
+#= uncoment to use
+# Test 1: Dos clases
+feature1 = [1, 2, 1, 2, 1, 2, 2, 1, 2]
+classes1 = [1, 2]
+result1 = oneHotEncoding(feature1, classes1)
+println("Resultado del Test 1:")
+println(result1)
+
+# Test 2: Tres clases
+feature2 = [1, 2, 3, 1, 2, 3, 3, 2, 1]
+classes2 = [1, 2, 3]
+result2 = oneHotEncoding(feature2, classes2)
+println("\nResultado del Test 2:")
+println(result2)
+
+# Test 3: sobrecarga 1
+feature3 = [1, 2, 3, 1, 2, 3, 3, 2, 1]
+result3 = oneHotEncoding(feature3)
+@assert result2 == result3
+println("\nResultado del Test 3:")
+println(result3)
+
+# Test 4: sobrecarga 2
+function test_oneHotEncoding_bool_vector()
+    # Datos de prueba
+    feature = [true, false, true, true, false]
+
+    # Llamada a la función oneHotEncoding
+    result = oneHotEncoding(feature)
+
+    # Verificar si la matriz resultante tiene el tamaño correcto
+    @assert size(result) == (length(feature), 1)
+
+    # Verificar si la matriz resultante es igual al vector original convertido en una columna
+    @assert result == reshape(feature, :, 1)
+
+    println("Test para oneHotEncoding con un vector booleano pasó correctamente.")
+end
+
+# Ejecutar el test
+test_oneHotEncoding_bool_vector()
+=#
 
 # PARTE 2
 # --------------------------------------------------------------------------
@@ -73,18 +103,118 @@ println("Incompleta con copy: ",new_normalize_values[1:15])
 # PARTE 5
 # --------------------------------------------------------------------------
 #= uncoment to use
+test = [0.1,0.5,0.1,0.9,0.8]
+classified = classifyOutputs(test)
+println("Classified outputs: ", classified)
 
+
+# Test para la función classifyOutputs con vector de salidas
+function test_classifyOutputs_vector()
+    outputs = [0.2, 0.6, 0.4, 0.8]
+    threshold = 0.5
+    expected_results = [false, true, false, true]
+    results = classifyOutputs(outputs; threshold)
+    @assert results == expected_results
+    println("Test para classifyOutputs con vector de salidas pasó correctamente.")
+end
+
+# Test para la función classifyOutputs con matriz de salidas
+function test_classifyOutputs_matrix()
+    outputs = [0.2 0.6; 0.4 0.8]
+    threshold = 0.5
+    expected_results = [false true; false true]
+    results = classifyOutputs(outputs; threshold)
+    @assert results == expected_results
+    println("Test para classifyOutputs con matriz de salidas pasó correctamente.")
+end
+
+# Test para la función classifyOutputs con un solo elemento
+function test_classifyOutputs_single_element()
+    outputs = [0.8]
+    threshold = 0.5
+    expected_results = [true]
+    results = classifyOutputs(outputs; threshold)
+    @assert results == expected_results
+    println("Test para classifyOutputs con un solo elemento pasó correctamente.")
+end
+
+# Ejecutar los tests
+test_classifyOutputs_vector()
+test_classifyOutputs_matrix()
+test_classifyOutputs_single_element()
 =#
 
 # PARTE 6
 # --------------------------------------------------------------------------
-#= uncoment to use
+# Test para la función accuracy con vectores de valores booleanos
+function test_accuracy_bool_vectors()
+    # Datos de prueba
+    targets = [true, true, false, false, true]
+    outputs = [true, true, true, false, false]
 
-=#
+    # Llamada a la función accuracy
+    result = accuracy(targets, outputs)
+
+    # Verificar si el resultado es correcto
+    @assert result == 0.6
+
+    println("Test para accuracy con vectores de valores booleanos pasó correctamente.")
+end
+
+# Test para la función accuracy con matrices de valores booleanos (1 columna)
+function test_accuracy_bool_matrices_single_column()
+    # Datos de prueba
+    targets = [true, false, true, false, true]
+    outputs = [true, false, false, false, true]
+
+    # Llamada a la función accuracy
+    result = accuracy([targets], [outputs])
+
+    # Verificar si el resultado es correcto
+    @assert result == 0.6
+
+    println("Test para accuracy con matrices de valores booleanos (1 columna) pasó correctamente.")
+end
+
+# Test para la función accuracy con vectores de valores reales y umbral por defecto
+function test_accuracy_real_vector_default_threshold()
+    # Datos de prueba
+    targets = [true, true, false, false, true]
+    outputs = [0.8, 0.9, 0.2, 0.4, 0.7]
+
+    # Llamada a la función accuracy
+    result = accuracy(targets, outputs)
+
+    # Verificar si el resultado es correcto
+    @assert result == 0.6
+
+    println("Test para accuracy con vectores de valores reales y umbral por defecto pasó correctamente.")
+end
+
+# Test para la función accuracy con matrices de valores reales y umbral especificado
+function test_accuracy_real_matrices_custom_threshold()
+    # Datos de prueba
+    targets = [true, false, true, false, true]
+    outputs = [0.8 0.6; 0.9 0.1; 0.2 0.3; 0.4 0.5; 0.7 0.8]
+
+    # Llamada a la función accuracy
+    result = accuracy(targets, outputs, threshold=0.7)
+
+    # Verificar si el resultado es correcto
+    @assert result == 0.4
+
+    println("Test para accuracy con matrices de valores reales y umbral especificado pasó correctamente.")
+end
+
+# Ejecutar los tests
+test_accuracy_bool_vectors()
+# test_accuracy_bool_matrices_single_column()
+# test_accuracy_real_vector_default_threshold()
+# test_accuracy_real_matrices_custom_threshold()
 
 # PARTE 7
 # --------------------------------------------------------------------------
-
+#= uncoment to use
 # topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
 topology = [10]
 topology2 = [20]
@@ -97,9 +227,17 @@ ann3 = buildClassANN(2, topology3, 2)
 println("Red: ", ann)
 println("Red2: ", ann2)
 println("Red3: ", ann3)
+=#
 
 # PARTE 8
 # --------------------------------------------------------------------------
 #= uncoment to use
-
+topology = [5]
+dataset = oneHotEncoding(targets)
+ann, loss = trainClassANN(topology, dataset)
+println(ann)
+println(loss)
 =#
+
+# PARTE 9
+# --------------------------------------------------------------------------

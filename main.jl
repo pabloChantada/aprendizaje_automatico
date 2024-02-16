@@ -16,9 +16,8 @@ using Statistics;
 # --------------------------------------------------------------------------
 
 function oneHotEncoding(feature::AbstractArray{<:Any,1}, classes::AbstractArray{<:Any,1})
-
     numClasses = length(classes);
-    @assert(numClasses>1);
+    @assert numClasses>1 "solo hay una clase";
     if numClasses==2
         # Si solo hay dos clases, se devuelve una matriz con una columna.
         one_col_matrix = reshape(feature.==classes[1], :, 1);
@@ -29,27 +28,12 @@ function oneHotEncoding(feature::AbstractArray{<:Any,1}, classes::AbstractArray{
         for numClass = 1:numClasses
             oneHot[:,numClass] .= (feature.==classes[numClass]);
         end;
-        matriz = oneHot;
+        return oneHot
     end;
-    return matriz
 end;
 
 function oneHotEncoding(feature::AbstractArray{<:Any,1})
-    classes = unique(feature)
-    @assert(numClasses>1);
-    if numClasses==2
-        # Si solo hay dos clases, se devuelve una matriz con una columna.
-        one_col_matrix = reshape(feature.==classes[1], :, 1);
-        return one_col_matrix
-    else
-        # Si hay mas de dos clases se devuelve una matriz con una columna por clase.
-        oneHot = Array{Bool,2}(undef, length(feature), numClasses);
-        for numClass = 1:numClasses
-            oneHot[:,numClass] .= (feature.==classes[numClass]);
-        end;
-        matriz = oneHot;
-    end;
-    return matriz
+    oneHotEncoding(feature, unique(feature))
 end;
 
 function oneHotEncoding(feature::AbstractArray{Bool,1})
@@ -150,11 +134,26 @@ end;
 # PARTE 5
 # --------------------------------------------------------------------------
 
-#=
 function classifyOutputs(outputs::AbstractArray{<:Real,1}; threshold::Real=0.5)
+    # outputs -> vector de salidas, no necesariamente un una RNA
+    # threshold -> opcional
+    results = outputs .>= threshold
+    return results
+end;
 
 function classifyOutputs(outputs::AbstractArray{<:Real,2}; threshold::Real=0.5)
-=#
+    # Recibe una matriz en vez de un vector
+    if size(outputs) == 1
+        vector_outputs = classifyOutputs(outputs[:]; threshold)
+        return reshape(vector_outputs, : ,1)
+    else
+        # (maximo cada fila/col, coordenadas del maximo)
+        (_,indicesMaxEachInstance) = findmax(outputs, dims=2); 
+        outputs = falses(size(outputs)); 
+        outputs[indicesMaxEachInstance] .= true
+        return outputs
+    end;
+end;
 
 # PARTE 6
 # --------------------------------------------------------------------------
@@ -236,46 +235,67 @@ end;
 #PARTE 8
 # --------------------------------------------------------------------------
 
-# BUCLE WHILE SOLO AQUI PARA ITERAR EL ENTRENAMIENTO
-# EL OPTIMIZADOR SE CREA FUERA DEL BUCLE
+# MIRAR COMO TESTEAR
 function trainClassANN(topology::AbstractArray{<:Int,1},
-    dataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
+    trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
+    validationDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}=
+    (Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0,0)),
+    testDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}=
+    (Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0,0)),
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
-    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01)
+    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01,
+    maxEpochsVal::Int=20) 
     #=
     topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
-    dataset = (inputs, targets) -> numero de neuronas de entrada y salida
     Criterios de Parada
         maxIterations
         minLoss
         learningRate
-    TRASPONER LAS MATRICES
     =#
-    ann = buildClassANN()
-    # mirar bien inputs y targets, seguramente este mal
-    inputs = dataset[:,1:4];
-    inputs = convert(AbstractArray{<:Real,2},inputs);
-    targets = dataset[:,5];
+    # Creacion de la neurona
+    inputs = dataset[1];
+    num_inputs = size(inputs)
+    targets = dataset[2];
+    num_targets = size(targets)
+    ann = buildClassANN(num_inputs, topology, num_targets; transferFunctions=transferFunctions)
+    
     opt_state = Flux.setup(Adam(learningRate), ann)
-    loss(model, x, y) = Losses.binarycrossentropy(model(x), y) 
     loss_data = []
     counter = 0
     while counter != maxEpochs
         Flux.train!(loss, ann, [(inputs', targets')], opt_state);
+        loss(ann, inputs, targets) = Losses.binarycrossentropy(ann(inputs), targets) 
         push!(loss_data, (counter, loss))
         counter += 1
     end;
-    return (ann, loss)
+    return (ann, loss_data)
 end;
-
+#=
 function trainClassANN(topology::AbstractArray{<:Int,1},
-    (inputs, targets)::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
+    trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
+    validationDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}}=
+    (Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0)),
+    testDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}}=
+    (Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0)),
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
-    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01)
+    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01,
+    maxEpochsVal::Int=20)
 
     if size(targets, 2) > 1
         targets = reshape(targets, (:, 1))
     end;
     dataset = (inputs, targets)
     trainClassANN(topology, dataset, transferFunctions, maxEpochs, minLoss, learningRate)
+end;
+=#
+
+# PARTE 9
+# --------------------------------------------------------------------------
+
+function holdOut(N::Int, P::Real)
+
+end;
+
+function holdOut(N::Int, Pval::Real, Ptest::Real)
+
 end;
