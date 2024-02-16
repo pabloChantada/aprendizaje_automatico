@@ -54,6 +54,13 @@ end
 
 # Ejecutar el test
 test_oneHotEncoding_bool_vector()
+
+# Seleccionar una columna para codificar en one-hot
+
+encoded = oneHotEncoding(targets)
+
+# Mostrar el resultado
+println(encoded)
 =#
 
 # PARTE 2
