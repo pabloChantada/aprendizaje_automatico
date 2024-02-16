@@ -36,20 +36,7 @@ end;
 
 function oneHotEncoding(feature::AbstractArray{<:Any,1})
     classes = unique(feature)
-    @assert(numClasses>1);
-    if numClasses==2
-        # Si solo hay dos clases, se devuelve una matriz con una columna.
-        one_col_matrix = reshape(feature.==classes[1], :, 1);
-        return one_col_matrix
-    else
-        # Si hay mas de dos clases se devuelve una matriz con una columna por clase.
-        oneHot = Array{Bool,2}(undef, length(feature), numClasses);
-        for numClass = 1:numClasses
-            oneHot[:,numClass] .= (feature.==classes[numClass]);
-        end;
-        matriz = oneHot;
-    end;
-    return matriz
+    return oneHotEncoding(feature, classes)
 end;
 
 function oneHotEncoding(feature::AbstractArray{Bool,1})
