@@ -1,8 +1,17 @@
 #=
 TESTEAR PARTES:
-    6 - modificar
-    8
-    9
+    5 -> Salidas incorrectas al clasificar los patrones con una sola columna
+    6 - modificar,  Error al ejecutar la funcion con parametros (AbstractArray{<:Real,2}, AbstractArray{Bool,2}; threshold::Real=0.5) 
+    al usar una matriz de valores reales como salidas y una matriz de valores booleanos como salidas deseadas, 
+    ambas de una columna, con un umbral distinto: MethodError: no method matching accuracy(::BitVector, ::Vector{Float64})
+    7 -> buildClassANN:
+      RNA incorrecta con 2 clases: número de capas incorrecto
+      RNA incorrecta con 2 clases: funcion de activacion incorrecta en la capa 2
+      RNA incorrecta con 2 clases: funcion de activacion incorrecta en la capa 3
+      RNA incorrecta con 2 clases: error al introducir entradas (posiblemente topología incorrecta)
+      Error al ejecutar la función con más de 2 clases: type Int64 has no field σ
+    8 -> Función no definida para argumentos de tipo
+    9 -> Error al ejecutar con argumentos de tipo (Int, Real): MethodError: no method matching +(::Tuple{Int64}, ::Tuple{Int64})
 =#
 
 include("main.jl")

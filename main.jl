@@ -132,7 +132,7 @@ function normalizeZeroMean(dataset::AbstractArray{<:Real,2})
 end;
 
 
-# PARTE 5
+# PARTE 5 - Correguir
 # --------------------------------------------------------------------------
 
 function classifyOutputs(outputs::AbstractArray{<:Real,1}; threshold::Real=0.5)
@@ -156,7 +156,7 @@ function classifyOutputs(outputs::AbstractArray{<:Real,2}; threshold::Real=0.5)
     end;
 end;
 
-# PARTE 6
+# PARTE 6 - Correguir
 # --------------------------------------------------------------------------
 
 function accuracy(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1})
@@ -209,7 +209,7 @@ function accuracy(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,
     end;
 end;
 
-# PARTE 7
+# PARTE 7 - Correguir
 # --------------------------------------------------------------------------
 
 function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutputs::Int;
@@ -233,7 +233,7 @@ function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutp
     return ann
 end;
 
-#PARTE 8
+#PARTE 8 - Correguir
 # --------------------------------------------------------------------------
 
 # MIRAR COMO TESTEAR
@@ -279,7 +279,7 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     trainClassANN(topology, dataset; transferFunctions, maxEpochs, minLoss, learningRate)
 end;
 
-# PARTE 9
+# PARTE 9 - Correguir
 # --------------------------------------------------------------------------
 
 function holdOut(N::Int, P::Real)
@@ -305,4 +305,37 @@ function holdOut(N::Int, Pval::Real, Ptest::Real)
     index_train = index_test[1] + index_val[1]
     @assert size(index_test) + size(index_train) + size(index_val) == N
     return (index_train, index_val[2], index_test[2])
+end;
+
+# PARTE 10
+# --------------------------------------------------------------------------
+
+function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1})
+    #
+    # Codigo a desarrollar
+    #
+end;
+
+function confusionMatrix(outputs::AbstractArray{<:Real,1}, targets::AbstractArray{Bool,1}; threshold::Real=0.5)
+    #
+    # Codigo a desarrollar
+    #
+end;
+
+function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
+    #
+    # Codigo a desarrollar
+    #
+end;
+
+function confusionMatrix(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
+    #
+    # Codigo a desarrollar
+    #
+end;
+
+function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray{<:Any,1}; weighted::Bool=true)
+    #
+    # Codigo a desarrollar
+    #
 end;
