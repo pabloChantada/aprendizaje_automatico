@@ -314,4 +314,20 @@ test_holdOut(1000, 0.1)
 test_holdOut(50, 0.5)
 
 run_tests()
+
+#test que hice por la cara slay (para comprobar poner un print en holdout igual que el return):
+N = 12          # Número total de muestras
+Pval = 0.2      # Porcentaje para el conjunto de validación
+Ptest = 0.2     # Porcentaje para el conjunto de prueba
+
+# Dividir los datos utilizando la función holdOut
+index_train, index_val, index_test = holdOut(N, Pval, Ptest)
+
+# Verificar el tamaño de los conjuntos resultantes
+println("Tamaño del conjunto de entrenamiento:", length(index_train))
+println("Tamaño del conjunto de validación:", length(index_val))
+println("Tamaño del conjunto de prueba:", length(index_test))
+
 =#
+=#
+
