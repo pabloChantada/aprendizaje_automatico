@@ -1,11 +1,5 @@
 #=
 TESTEAR PARTES:
-    7 -> buildClassANN:
-      RNA incorrecta con 2 clases: número de capas incorrecto
-      RNA incorrecta con 2 clases: funcion de activacion incorrecta en la capa 2
-      RNA incorrecta con 2 clases: funcion de activacion incorrecta en la capa 3
-      RNA incorrecta con 2 clases: error al introducir entradas (posiblemente topología incorrecta)
-      Error al ejecutar la función con más de 2 clases: type Int64 has no field σ
     8 -> Función no definida para argumentos de tipo
     9 -> Error al ejecutar con argumentos de tipo (Int, Real): MethodError: no method matching +(::Tuple{Int64}, ::Tuple{Int64})
 =#
@@ -133,7 +127,7 @@ println(classified)
 
 # PARTE 6
 # --------------------------------------------------------------------------
-#=
+#= uncoment to use
 # Test para la función accuracy con vectores de valores booleanos
 function test_accuracy_bool_vectors()
     # Datos de prueba
@@ -205,26 +199,36 @@ test_accuracy_real_matrices_custom_threshold()
 =#
 # PARTE 7
 # --------------------------------------------------------------------------
-#= uncoment to use
-NO SE QUE ESTA MAL LA VRD, PREGUNTAR
+#NO SE QUE ESTA MAL LA VRD, PREGUNTAR
 # topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
-topology = [10, 3]
+#= uncoment to use
+topology = [10, 3, 2, 2]
 topology2 = [20, 10]
-topology3 = [100,50]
+topology3 = [1,1]
+topology4 = [25,12, 4]
+topology5 = [25,25, 20, 10, 5, 3, 1]
+
 
 ann = buildClassANN(2, topology, 1)
 ann2 = buildClassANN(4, topology2, 1)
-ann3 = buildClassANN(8, topology3, 4)
+ann3 = buildClassANN(23, topology3, 3)
+ann4 = buildClassANN(123, topology4, 2)
+ann5 = buildClassANN(20, topology5, 15)
 
 println("Red: ", ann)
 println("Red2: ", ann2)
 println("Red3: ", ann3)
+println("Red4: ", ann4)
+println("Red5: ", ann5)
 =#
-
 # PARTE 8
 # --------------------------------------------------------------------------
-
-# TRAIN CLASS ANN
+topology = [25,25, 20, 10, 5, 3, 1]
+outputs = [0.8 0.9 0.5 0.4 0.2]
+targets = [true true false false true]
+dataset = (outputs, targets)
+result = trainClassANN(topology, dataset)
+println(result)
 
 # PARTE 9
 # --------------------------------------------------------------------------

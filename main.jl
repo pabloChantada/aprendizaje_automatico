@@ -210,7 +210,7 @@ function accuracy(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,
     end;
 end;
 
-# PARTE 7 - Correguir
+# PARTE 7
 # --------------------------------------------------------------------------
 
 function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutputs::Int;
@@ -228,6 +228,7 @@ function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutp
         numInputsLayer = numOutputsLayer
     end;
     # Ultima capa
+    # > o >=
     if numOutputs > 2
         ann = Chain(ann..., numOutputs, softmax)
     else
@@ -252,24 +253,28 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
         learningRate
     =#
     # Creacion de la neurona
-    inputs = dataset[1];
-    num_inputs = size(inputs)
-    targets = dataset[2];
-    num_targets = size(targets)
-    ann = buildClassANN(num_inputs, topology, num_targets; transferFunctions=transferFunctions)
-    
+    inputs = dataset[1]
+    targets = dataset[2]
+    inputs = Float32.(inputs)
+    targets = Float32.(inputs)
+    ann = buildClassANN(size(inputs, 1), topology, size(targets, 1))
+
     opt_state = Flux.setup(Adam(learningRate), ann)
-    loss_data = []
+    loss_values = []
     counter = 0
     while counter != maxEpochs
-        Flux.train!(loss, ann, [(inputs', targets')], opt_state);
-        loss(ann, inputs, targets) = Losses.binarycrossentropy(ann(inputs), targets) 
-        push!(loss_data, (counter, loss))
+        # Calcular loss
+        Flux.train!(current_loss, ann, [(inputs', targets')], opt_state)
+
+
+        # Agregar el valor de loss al vector
+        push!(loss_values, current_loss)
         counter += 1
     end;
-    return (ann, loss_data)
+    return ann, loss_values
 end;
 
+#=
 function trainClassANN(topology::AbstractArray{<:Int,1},
     (inputs, targets)::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
@@ -363,3 +368,4 @@ end;
 function printConfusionMatrix(outputs::AbstractArray{<:Any,1},
     targets::AbstractArray{<:Any,1}; weighted::Bool=true)
 end;
+=#
