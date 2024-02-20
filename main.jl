@@ -132,23 +132,23 @@ function normalizeZeroMean(dataset::AbstractArray{<:Real,2})
 end;
 
 
-# PARTE 5 - Correguir
+# PARTE 5
 # --------------------------------------------------------------------------
 
 function classifyOutputs(outputs::AbstractArray{<:Real,1}; threshold::Real=0.5)
     # outputs -> vector de salidas, no necesariamente un una RNA
     # threshold -> opcional
-    results = outputs .>= threshold
-    return results
+    return outputs .>= threshold
 end;
 
 function classifyOutputs(outputs::AbstractArray{<:Real,2}; threshold::Real=0.5)
     # Recibe una matriz en vez de un vector
-    if size(outputs) == 1
+    if size(outputs, 2) == 1
+        reshape(outputs, : ,1)
         vector_outputs = classifyOutputs(outputs[:]; threshold)
-        return reshape(vector_outputs, : ,1)
-    else
+        return vector_outputs
         # (maximo cada fila/col, coordenadas del maximo)
+    else
         (_,indicesMaxEachInstance) = findmax(outputs, dims=2); 
         outputs = falses(size(outputs)); 
         outputs[indicesMaxEachInstance] .= true
@@ -156,12 +156,12 @@ function classifyOutputs(outputs::AbstractArray{<:Real,2}; threshold::Real=0.5)
     end;
 end;
 
-# PARTE 6 - Correguir
+# PARTE 6
 # --------------------------------------------------------------------------
 
 function accuracy(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1})
     #Las matrices targets y outputs deben tener la misma longitud.
-    @assert length(targets) == length(outputs)  
+    @assert length(targets) == length(outputs)
     #Divide el número de coincidencias entre el tamaño del vector targets para saber la media de aciertos.
     return sum(targets .== outputs) / length(targets)
 end;
@@ -179,7 +179,8 @@ function accuracy(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}
         mismatches = sum(targets .!= outputs, dims=2)
         #Cuenta el número de filas con al menos una diferencia, y lo divide entre 
         #el número total de filas, valor el cual se resta de 1 para obtener la precisión.
-        return 1.0 - count(mismatches .> 0) / size(targets, 1)
+        # print(1.0 - count(mismatches .> 0) / size(targets, 1)) -> 0
+        return 1.0 - (sum(mismatches) / (size(targets)[1]*size(targets)[2]))
     end;
 end;
 
@@ -199,13 +200,13 @@ function accuracy(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,
     #Comprueba si la matriz outputs tiene una sola columna.
     if size(outputs, 2) == 1
         # outputs tiene una sola columna, llamamos a la función accuracy creada anteriormente.
-        return accuracy(targets[:, 1], outputs[:, 1])
+        return accuracy(outputs[:, 1], targets[:, 1])
     else
         #Llamamos a la función classifyOutputs que convierte la matriz de valores reales outputs 
         #en una matriz de valores booleanos.
-        outputs_bool = classifyOutputs(outputs)
+        outputs_bool = classifyOutputs(outputs; threshold)
         #Llamamos a la función creada antes y esta se encargará de comparar los vectores booleanos targets y outputs_bool y calcular la precisión del modelo.
-        return accuracy(targets, outputs_bool)
+        return accuracy(outputs_bool, targets)
     end;
 end;
 
@@ -216,19 +217,21 @@ function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutp
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology))) 
     # topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
     # global ann, numInputsLayer para usar fuera de la funcion
+    # para que tenemos transferFunctions ?????
     @assert !isempty(topology) "No hay capas ocultas"
     
     ann = Chain()
     numInputsLayer = numInputs
+    @assert length(topology) != 0 "No hay capas ocultas"
     for numOutputsLayer = topology
-        ann = Chain(ann..., Dense(numInputsLayer, numOutputsLayer, transferFunctions[1]))
+        ann = Chain(ann..., Dense(numInputsLayer, numOutputsLayer, σ))
         numInputsLayer = numOutputsLayer
     end;
     # Ultima capa
     if numOutputs > 2
         ann = Chain(ann..., numOutputs, softmax)
     else
-        ann = Chain(ann..., numOutputs, sigmoid)
+        ann = Chain(ann..., numOutputs, σ)
     end;
     return ann
 end;
@@ -309,7 +312,7 @@ end;
 
 # PARTE 10
 # --------------------------------------------------------------------------
-
+# 4.1
 function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1})
     #
     # Codigo a desarrollar
@@ -322,6 +325,15 @@ function confusionMatrix(outputs::AbstractArray{<:Real,1}, targets::AbstractArra
     #
 end;
 
+function printConfusionMatrix(outputs::AbstractArray{Bool,1},
+    targets::AbstractArray{Bool,1})
+end;
+
+function printConfusionMatrix(outputs::AbstractArray{<:Real,1},
+    targets::AbstractArray{Bool,1}; threshold::Real=0.5)
+end;
+
+# 4.2
 function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
     #
     # Codigo a desarrollar
@@ -338,4 +350,16 @@ function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray
     #
     # Codigo a desarrollar
     #
+end;
+
+function printConfusionMatrix(outputs::AbstractArray{Bool,2},
+    targets::AbstractArray{Bool,2}; weighted::Bool=true)
+end;
+
+function printConfusionMatrix(outputs::AbstractArray{<:Real,2},
+    targets::AbstractArray{Bool,2}; weighted::Bool=true)
+end;
+
+function printConfusionMatrix(outputs::AbstractArray{<:Any,1},
+    targets::AbstractArray{<:Any,1}; weighted::Bool=true)
 end;

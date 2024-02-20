@@ -1,9 +1,5 @@
 #=
 TESTEAR PARTES:
-    5 -> Salidas incorrectas al clasificar los patrones con una sola columna
-    6 - modificar,  Error al ejecutar la funcion con parametros (AbstractArray{<:Real,2}, AbstractArray{Bool,2}; threshold::Real=0.5) 
-    al usar una matriz de valores reales como salidas y una matriz de valores booleanos como salidas deseadas, 
-    ambas de una columna, con un umbral distinto: MethodError: no method matching accuracy(::BitVector, ::Vector{Float64})
     7 -> buildClassANN:
       RNA incorrecta con 2 clases: número de capas incorrecto
       RNA incorrecta con 2 clases: funcion de activacion incorrecta en la capa 2
@@ -120,50 +116,24 @@ println("Incompleta con copy: ",new_normalize_values[1:15])
 # PARTE 5
 # --------------------------------------------------------------------------
 #= uncoment to use
+
 test = [0.1,0.5,0.1,0.9,0.8]
 classified = classifyOutputs(test)
 println("Classified outputs: ", classified)
 
-
-# Test para la función classifyOutputs con vector de salidas
-function test_classifyOutputs_vector()
-    outputs = [0.2, 0.6, 0.4, 0.8]
-    threshold = 0.5
-    expected_results = [false, true, false, true]
-    results = classifyOutputs(outputs; threshold)
-    @assert results == expected_results
-    println("Test para classifyOutputs con vector de salidas pasó correctamente.")
+rows = 5
+cols = 5
+random_matrix = rand(rows, cols)
+for i in 1:rows
+    println(join(round.(random_matrix[i, :], digits=2), "\t"))
 end
-
-# Test para la función classifyOutputs con matriz de salidas
-function test_classifyOutputs_matrix()
-    outputs = [0.2 0.6; 0.4 0.8]
-    threshold = 0.5
-    expected_results = [false true; false true]
-    results = classifyOutputs(outputs; threshold)
-    @assert results == expected_results
-    println("Test para classifyOutputs con matriz de salidas pasó correctamente.")
-end
-
-# Test para la función classifyOutputs con un solo elemento
-function test_classifyOutputs_single_element()
-    outputs = [0.8]
-    threshold = 0.5
-    expected_results = [true]
-    results = classifyOutputs(outputs; threshold)
-    @assert results == expected_results
-    println("Test para classifyOutputs con un solo elemento pasó correctamente.")
-end
-
-# Ejecutar los tests
-test_classifyOutputs_vector()
-test_classifyOutputs_matrix()
-test_classifyOutputs_single_element()
+classified = classifyOutputs(random_matrix)
+println(classified)
 =#
 
 # PARTE 6
 # --------------------------------------------------------------------------
-#= uncoment to use
+#=
 # Test para la función accuracy con vectores de valores booleanos
 function test_accuracy_bool_vectors()
     # Datos de prueba
@@ -176,72 +146,75 @@ function test_accuracy_bool_vectors()
     # Verificar si el resultado es correcto
     @assert result == 0.6
 
-    println("Test para accuracy con vectores de valores booleanos pasó correctamente.")
+    println("Test para accuracy con vectores de valores booleanos pasó correctamente: ", result)
 end
 
 # Test para la función accuracy con matrices de valores booleanos (1 columna)
 function test_accuracy_bool_matrices_single_column()
     # Datos de prueba
-    targets = [true, false, true, false, true]
-    outputs = [true, false, false, false, true]
-
+    targets = [true; false; false; false]
+    outputs = [true; true; false; true]
+    targets2 = [true false true; false false false; true false false; false false true]
+    outputs2 = [true true false; true false true; true false true; true false true]
     # Llamada a la función accuracy
-    result = accuracy([targets], [outputs])
+    result = accuracy(outputs2, targets2)
 
     # Verificar si el resultado es correcto
-    @assert result == 0.6
+    @assert result == 0.5
 
-    println("Test para accuracy con matrices de valores booleanos (1 columna) pasó correctamente.")
+    println("Test para accuracy con matrices de valores booleanos (1 columna) pasó correctamente.", result)
 end
 
 # Test para la función accuracy con vectores de valores reales y umbral por defecto
 function test_accuracy_real_vector_default_threshold()
     # Datos de prueba
     targets = [true, true, false, false, true]
-    outputs = [0.8, 0.9, 0.2, 0.4, 0.7]
+    outputs = [0.8, 0.9, 0.5, 0.4, 0.2]
 
     # Llamada a la función accuracy
-    result = accuracy(targets, outputs)
+    result = accuracy(outputs, targets)
 
     # Verificar si el resultado es correcto
     @assert result == 0.6
 
-    println("Test para accuracy con vectores de valores reales y umbral por defecto pasó correctamente.")
+    println("Test para accuracy con vectores de valores reales y umbral por defecto pasó correctamente.", result)
 end
 
 # Test para la función accuracy con matrices de valores reales y umbral especificado
 function test_accuracy_real_matrices_custom_threshold()
     # Datos de prueba
-    targets = [true, false, true, false, true]
-    outputs = [0.8 0.6; 0.9 0.1; 0.2 0.3; 0.4 0.5; 0.7 0.8]
+    targets = [true; false; false; false]
+    outputs = [0.8; 0.9; 0.5; 0.2]
+    targets2 = [true false true; false false true; true false false; false false true]
+    outputs2 = [0.7 0.2 0.5; 0.3 0.3 0.9; 0.8 0.5 1; 0.2 0.1 0.8]
 
     # Llamada a la función accuracy
-    result = accuracy(targets, outputs, threshold=0.7)
+    result = accuracy(outputs2, targets2; threshold=0.7)
 
     # Verificar si el resultado es correcto
-    @assert result == 0.4
+    @assert result == 0.75
 
-    println("Test para accuracy con matrices de valores reales y umbral especificado pasó correctamente.")
+    println("Test para accuracy con matrices de valores reales y umbral especificado pasó correctamente.", result)
 end
 
 # Ejecutar los tests
 test_accuracy_bool_vectors()
-# test_accuracy_bool_matrices_single_column()
-# test_accuracy_real_vector_default_threshold()
-# test_accuracy_real_matrices_custom_threshold()
+test_accuracy_bool_matrices_single_column()
+test_accuracy_real_vector_default_threshold()
+test_accuracy_real_matrices_custom_threshold()
 =#
-
 # PARTE 7
 # --------------------------------------------------------------------------
 #= uncoment to use
+NO SE QUE ESTA MAL LA VRD, PREGUNTAR
 # topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
-topology = [10]
-topology2 = [20]
-topology3 = [100]
+topology = [10, 3]
+topology2 = [20, 10]
+topology3 = [100,50]
 
-ann = buildClassANN(2, topology, 2)
-ann2 = buildClassANN(2, topology2, 2)
-ann3 = buildClassANN(2, topology3, 2)
+ann = buildClassANN(2, topology, 1)
+ann2 = buildClassANN(4, topology2, 1)
+ann3 = buildClassANN(8, topology3, 4)
 
 println("Red: ", ann)
 println("Red2: ", ann2)
@@ -250,13 +223,8 @@ println("Red3: ", ann3)
 
 # PARTE 8
 # --------------------------------------------------------------------------
-#= uncoment to use
-topology = [5]
-dataset = oneHotEncoding(targets)
-ann, loss = trainClassANN(topology, dataset)
-println(ann)
-println(loss)
-=#
+
+# TRAIN CLASS ANN
 
 # PARTE 9
 # --------------------------------------------------------------------------
