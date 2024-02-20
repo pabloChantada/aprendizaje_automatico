@@ -134,6 +134,7 @@ println(classified)
 # PARTE 6
 # --------------------------------------------------------------------------
 #=
+#= uncoment to use
 # Test para la función accuracy con vectores de valores booleanos
 function test_accuracy_bool_vectors()
     # Datos de prueba
@@ -146,62 +147,89 @@ function test_accuracy_bool_vectors()
     # Verificar si el resultado es correcto
     @assert result == 0.6
 
-    println("Test para accuracy con vectores de valores booleanos pasó correctamente: ", result)
+    println("Test para accuracy con vectores de valores booleanos pasó correctamente.")
 end
 
 # Test para la función accuracy con matrices de valores booleanos (1 columna)
 function test_accuracy_bool_matrices_single_column()
     # Datos de prueba
-    targets = [true; false; false; false]
-    outputs = [true; true; false; true]
-    targets2 = [true false true; false false false; true false false; false false true]
-    outputs2 = [true true false; true false true; true false true; true false true]
+    targets = [true, false, true, false, true]
+    outputs = [true, false, false, false, true]
+
     # Llamada a la función accuracy
-    result = accuracy(outputs2, targets2)
+    result = accuracy([targets], [outputs])
 
     # Verificar si el resultado es correcto
-    @assert result == 0.5
+    @assert result == 0.6
 
-    println("Test para accuracy con matrices de valores booleanos (1 columna) pasó correctamente.", result)
+    println("Test para accuracy con matrices de valores booleanos (1 columna) pasó correctamente.")
 end
 
 # Test para la función accuracy con vectores de valores reales y umbral por defecto
 function test_accuracy_real_vector_default_threshold()
     # Datos de prueba
     targets = [true, true, false, false, true]
-    outputs = [0.8, 0.9, 0.5, 0.4, 0.2]
+    outputs = [0.8, 0.9, 0.2, 0.4, 0.7]
 
     # Llamada a la función accuracy
-    result = accuracy(outputs, targets)
+    result = accuracy(targets, outputs)
 
     # Verificar si el resultado es correcto
     @assert result == 0.6
 
-    println("Test para accuracy con vectores de valores reales y umbral por defecto pasó correctamente.", result)
+    println("Test para accuracy con vectores de valores reales y umbral por defecto pasó correctamente.")
 end
 
 # Test para la función accuracy con matrices de valores reales y umbral especificado
 function test_accuracy_real_matrices_custom_threshold()
     # Datos de prueba
-    targets = [true; false; false; false]
-    outputs = [0.8; 0.9; 0.5; 0.2]
-    targets2 = [true false true; false false true; true false false; false false true]
-    outputs2 = [0.7 0.2 0.5; 0.3 0.3 0.9; 0.8 0.5 1; 0.2 0.1 0.8]
+    targets = [true, false, true, false, true]
+    outputs = [0.8 0.6; 0.9 0.1; 0.2 0.3; 0.4 0.5; 0.7 0.8]
 
     # Llamada a la función accuracy
-    result = accuracy(outputs2, targets2; threshold=0.7)
+    result = accuracy(targets, outputs, threshold=0.7)
 
     # Verificar si el resultado es correcto
-    @assert result == 0.75
+    @assert result == 0.4
 
-    println("Test para accuracy con matrices de valores reales y umbral especificado pasó correctamente.", result)
+    println("Test para accuracy con matrices de valores reales y umbral especificado pasó correctamente.")
 end
 
+#Nuevo test usado para arreglar la función:
+function prueba_error_accuracy()
+    # Datos de prueba
+    outputs = [0.6, 0.3, 0.8, 0.9]
+    targets = [true, false, true, true]
+
+    # Llamada a la función accuracy con matrices de una sola columna y umbral especificado
+    accuracy(outputs, targets, threshold=0.5)
+end;
+=#
 # Ejecutar los tests
-test_accuracy_bool_vectors()
-test_accuracy_bool_matrices_single_column()
-test_accuracy_real_vector_default_threshold()
-test_accuracy_real_matrices_custom_threshold()
+#test_accuracy_bool_vectors()
+# test_accuracy_bool_matrices_single_column()
+# test_accuracy_real_vector_default_threshold()
+# test_accuracy_real_matrices_custom_threshold()
+#prueba_error_accuracy()
+
+#=
+# Caso de prueba para la función de precisión con vectores booleanos
+outputs_vec = [true, false, true, true]
+targets_vec = [true, true, false, true]
+println("Precisión (vectores booleanos): ", accuracy(outputs_vec, targets_vec))  # Salida esperada: 0.5
+
+# Caso de prueba para la función de precisión con matrices booleanas
+outputs_mat = [true false; false true; true true; true false]
+targets_mat = [true false; true true; false true; true false]
+println("Precisión (matrices booleanas): ", accuracy(outputs_mat, targets_mat))  # Salida esperada: 0.75
+
+# Caso de prueba para la función de precisión con vectores de valores reales
+outputs_real_vec = [0.6, 0.3, 0.8, 0.9]
+println("Precisión (vectores de valores reales): ", accuracy(outputs_real_vec, targets_vec))  # Salida esperada: 0.5
+
+# Caso de prueba para la función de precisión con matrices de valores reales
+outputs_real_mat = [0.6 0.4; 0.3 0.7; 0.8 0.2; 0.9 0.1]
+println("Precisión (matrices de valores reales): ", accuracy(outputs_real_mat, targets_mat))  # Salida esperada: 0.625
 =#
 # PARTE 7
 # --------------------------------------------------------------------------
