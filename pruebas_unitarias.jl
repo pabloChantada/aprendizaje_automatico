@@ -3,14 +3,15 @@ TESTEAR PARTES:
     8 -> Función no definida para argumentos de tipo
     9 -> Error al ejecutar con argumentos de tipo (Int, Real): MethodError: no method matching +(::Tuple{Int64}, ::Tuple{Int64})
 =#
-
+#=
 include("main.jl")
+
 
 dataset = readdlm("iris.data",',');
 inputs = dataset[:,1:4];
 inputs = convert(Array{Float32,2},inputs);
 targets = dataset[:,5];
-
+=#
 # PARTE 1
 # --------------------------------------------------------------------------
 #= uncoment to use
@@ -250,7 +251,6 @@ test_accuracy_real_matrices_custom_threshold()
 # --------------------------------------------------------------------------
 #NO SE QUE ESTA MAL LA VRD, PREGUNTAR
 # topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
-#= uncoment to use
 topology = [10, 3, 2, 2]
 topology2 = [20, 10]
 topology3 = [1,1]
@@ -269,40 +269,27 @@ println("Red2: ", ann2)
 println("Red3: ", ann3)
 println("Red4: ", ann4)
 println("Red5: ", ann5)
-=#
+
 # PARTE 8
 # --------------------------------------------------------------------------
 
-#= uncoment to use
-
+#=
 topology = [25,25, 20, 10, 5, 3, 1]
-outputs = [0.8 0.9 0.5 0.4 0.2]
-targets = [true true false false true]
+outputs = [0.8 0.9 0.5 0.4 0.2; 0.8 0.9 0.5 0.4 0.2]
+targets = [true false false; false true false]
 dataset = (outputs, targets)
-result = trainClassANN(topology, dataset)
-println(result)
 =#
-# PARTE 9
-# --------------------------------------------------------------------------
-using Random;
+include("main.jl")
 
-x = 3
-N = 20
-for _ in 1:x
-    Ptest = round(rand(), digits=2)     # Porcentaje para el conjunto de prueba
-    index_train, index_test = holdOut(N, Ptest)
-    println("Test: ", Ptest)
-    println()
-    println("Tamaño del conjunto de entrenamiento:", length(index_train)," -> ", index_train)
-    println("Tamaño del conjunto de test: ", length(index_test)," -> ", index_test)
-end;
-Ptest = 0.3
-Pval = 0.2
-index_train, index_val, index_test = holdOut(N, Pval, Ptest)
-println("Test: ", Ptest)
-println("Validacion: ", Pval)
-println()
-# Verificar el tamaño de los conjuntos resultantes
-println("Tamaño del conjunto de entrenamiento:", length(index_train)," -> ", index_train)
-println("Tamaño del conjunto de validación:", length(index_val)," -> ", index_val)
-println("Tamaño del conjunto de test: ", length(index_test)," -> ", index_test)
+dataset = readdlm("iris.data",',');
+inputs = dataset[:,1:4];
+inputs = convert(Array{Float32,2},inputs);
+targets = dataset[:,5];
+topology = [10,5,2]
+ann = buildClassANN(size(inputs,2), topology, size(targets,2))
+opt_state = Flux.setup(Adam(0.1), ann)
+loss(ann, x,y) = (size(y,1) == 1) ? Losses.binarycrossentropy(ann(x),y) : Losses.crossentropy(ann(x),y);
+
+ann(inputs')
+
+Flux.train!(loss, ann, [(inputs', targets')], opt_state);

@@ -222,16 +222,17 @@ function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutp
 
     ann = Chain()
     numInputsLayer = numInputs
-        for numOutputsLayer = topology
+    for numOutputsLayer = topology
         ann = Chain(ann..., Dense(numInputsLayer, numOutputsLayer, σ))
         numInputsLayer = numOutputsLayer
     end
     # Ultima capa
     # > o >=
     if numOutputs > 2
-        ann = Chain(ann..., Dense(numInputsLayer, numOutputs, softmax))
+        ann = Chain(ann..., Dense(numInputsLayer, numOutputs, identity) );
+        ann = Chain(ann..., softmax ); 
     else
-        ann = Chain(ann..., Dense(numInputsLayer, numOutputs, σ))
+        ann = Chain(ann..., Dense(numInputsLayer, numOutputs,σ))
     end;
     return ann
 end;
@@ -244,24 +245,20 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01)
     # topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
-    inputs = dataset[1]
-    targets = dataset[2]
-    ann = buildClassANN(length(inputs), topology, length(targets); transferFunctions)
+    inputs, targets = dataset
+    ann = buildClassANN(size(inputs,1), topology, size(targets,1); transferFunctions=transferFunctions)
 
     opt_state = Flux.setup(Adam(learningRate), ann)
-    loss_values = []
     counter = 1
-    while counter != maxEpochs+1 || sum(loss_values[end-num_elements+1:end]) != minLoss
-        predictions = ann(inputs')
-        current_loss = Losses.binarycrossentropy(predictions, targets)
+    loss(model, x,y) = (size(y,1) == 1) ? Losses.binarycrossentropy(model(x),y) : Losses.crossentropy(model(x),y);
+    while counter != maxEpochs+1
         #=
         FALLA EN EL CALCULO DE LOSS AL ENTRENAR
         =#
-        push!(loss_values, current_loss)
-        Flux.train!(current_loss, ann, [(inputs', targets')], opt_state)
+        Flux.train!(loss, ann, [(inputs', targets')], opt_state)
         counter += 1
     end
-    return ann, loss_values
+    return ann, loss
 end;
 
 function trainClassANN(topology::AbstractArray{<:Int,1},
@@ -274,7 +271,7 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     trainClassANN(topology, dataset; transferFunctions, maxEpochs, minLoss, learningRate)
 end;
 
-# PARTE 9 - Correguir
+# PARTE 9 - Preguntar
 # --------------------------------------------------------------------------
 
 function holdOut(N::Int, P::Real)
@@ -326,7 +323,7 @@ end
 
 # PARTE 10
 # --------------------------------------------------------------------------
-# 4.1
+# 4.1 - Devuelve matriz y  metrica
 function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1})
     #
     # Codigo a desarrollar
