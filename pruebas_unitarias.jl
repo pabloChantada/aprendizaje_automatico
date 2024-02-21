@@ -190,7 +190,56 @@ function test_accuracy_real_matrices_custom_threshold()
 
     println("Test para accuracy con matrices de valores reales y umbral especificado pasó correctamente.", result)
 end
+# Test para la función accuracy con matrices de valores reales y umbral especificado
+function test_accuracy_real_matrices_custom_threshold()
+    # Datos de prueba
+    targets = [true, false, true, false, true]
+    outputs = [0.8 0.6; 0.9 0.1; 0.2 0.3; 0.4 0.5; 0.7 0.8]
 
+    # Llamada a la función accuracy
+    result = accuracy(targets, outputs, threshold=0.7)
+
+    # Verificar si el resultado es correcto
+    @assert result == 0.4
+
+    println("Test para accuracy con matrices de valores reales y umbral especificado pasó correctamente.")
+end
+
+#Nuevo test usado para arreglar la función:
+function prueba_error_accuracy()
+    # Datos de prueba
+    outputs = [0.6, 0.3, 0.8, 0.9]
+    targets = [true, false, true, true]
+
+    # Llamada a la función accuracy con matrices de una sola columna y umbral especificado
+    accuracy(outputs, targets, threshold=0.5)
+end;
+=#
+# Ejecutar los tests
+#test_accuracy_bool_vectors()
+# test_accuracy_bool_matrices_single_column()
+# test_accuracy_real_vector_default_threshold()
+# test_accuracy_real_matrices_custom_threshold()
+#prueba_error_accuracy()
+
+#=
+# Caso de prueba para la función de precisión con vectores booleanos
+outputs_vec = [true, false, true, true]
+targets_vec = [true, true, false, true]
+println("Precisión (vectores booleanos): ", accuracy(outputs_vec, targets_vec))  # Salida esperada: 0.5
+
+# Caso de prueba para la función de precisión con matrices booleanas
+outputs_mat = [true false; false true; true true; true false]
+targets_mat = [true false; true true; false true; true false]
+println("Precisión (matrices booleanas): ", accuracy(outputs_mat, targets_mat))  # Salida esperada: 0.75
+
+# Caso de prueba para la función de precisión con vectores de valores reales
+outputs_real_vec = [0.6, 0.3, 0.8, 0.9]
+println("Precisión (vectores de valores reales): ", accuracy(outputs_real_vec, targets_vec))  # Salida esperada: 0.5
+
+# Caso de prueba para la función de precisión con matrices de valores reales
+outputs_real_mat = [0.6 0.4; 0.3 0.7; 0.8 0.2; 0.9 0.1]
+println("Precisión (matrices de valores reales): ", accuracy(outputs_real_mat, targets_mat))  # Salida esperada: 0.625
 # Ejecutar los tests
 test_accuracy_bool_vectors()
 test_accuracy_bool_matrices_single_column()
@@ -224,6 +273,7 @@ println("Red5: ", ann5)
 # PARTE 8
 # --------------------------------------------------------------------------
 
+#= uncoment to use
 
 topology = [25,25, 20, 10, 5, 3, 1]
 outputs = [0.8 0.9 0.5 0.4 0.2]
@@ -231,7 +281,28 @@ targets = [true true false false true]
 dataset = (outputs, targets)
 result = trainClassANN(topology, dataset)
 println(result)
-
+=#
 # PARTE 9
 # --------------------------------------------------------------------------
+using Random;
 
+x = 3
+N = 20
+for _ in 1:x
+    Ptest = round(rand(), digits=2)     # Porcentaje para el conjunto de prueba
+    index_train, index_test = holdOut(N, Ptest)
+    println("Test: ", Ptest)
+    println()
+    println("Tamaño del conjunto de entrenamiento:", length(index_train)," -> ", index_train)
+    println("Tamaño del conjunto de test: ", length(index_test)," -> ", index_test)
+end;
+Ptest = 0.3
+Pval = 0.2
+index_train, index_val, index_test = holdOut(N, Pval, Ptest)
+println("Test: ", Ptest)
+println("Validacion: ", Pval)
+println()
+# Verificar el tamaño de los conjuntos resultantes
+println("Tamaño del conjunto de entrenamiento:", length(index_train)," -> ", index_train)
+println("Tamaño del conjunto de validación:", length(index_val)," -> ", index_val)
+println("Tamaño del conjunto de test: ", length(index_test)," -> ", index_test)

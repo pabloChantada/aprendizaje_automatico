@@ -280,27 +280,49 @@ end;
 function holdOut(N::Int, P::Real)
     # N -> numero de patrones
     # P -> valor entre 0 y 1, indica el porcentaje para el test
-    # numero de patrones para el teset
-    @assert P > 0 && P < 1 "Valores fuera de rango"
+    # numero de patrones para el test
+    @assert P < 1 "Valores de test fuera de rango"
     test_size = Int(floor(N * P))
     # permutamos los datos
     index_perm = randperm(N)
     index_test = index_perm[1:test_size]
     index_train = index_perm[test_size+1:end]
-    @assert size(index_test) + size(index_train) == N
-    return(index_train, index_test)
+    @assert length(index_test) + length(index_train) == N
+    return (index_train, index_test)
 end;
 
 function holdOut(N::Int, Pval::Real, Ptest::Real)
     # N -> numero de patrones
-    # Pval -> valor entre 0 y 1, tasa del conjunto validacion
-    # Ptest -> valor entre 0 y 1, tasa del conjunto validacion
-    index_test = holdOut(N, Ptest)
-    index_val = holdOut(N, Pval)
-    index_train = index_test[1] + index_val[1]
-    @assert size(index_test) + size(index_train) + size(index_val) == N
-    return (index_train, index_val[2], index_test[2])
-end;
+    # Pval -> valor entre 0 y 1, tasa de patrones del conjunto de validacion
+    # Ptest -> valor entre 0 y 1, tasa de patrones del conjunto de prueba
+    @assert Pval < 1 "Valores de validacion fuera de rango"
+    @assert Ptest < 1 "Valores de test fuera de rango"
+    # Permutacion aleatoria de los indices
+    #indexes = randperm(N)
+    #index_val = holdOut(N, Pval)
+    #index_test = holdOut(N, Ptest)
+    #=
+    while any(x -> x in index_val[2], index_test[2])
+        index_test = holdOut(length(indexes), Ptest)
+    end;
+    =#
+    # Obtenemos el vecto de entrenamiento con los indices restantes
+    # index_train = setdiff(indexes, vcat(index_val[2], index_test[2]))
+
+    # Calculamos los tamaños de los conjuntos
+    Nval = round(Int, N * Pval)
+    Ntest = round(Int, N * Ptest)
+    Ntrain = N - Nval - Ntest
+    # Permutación aleatoria de los índices
+    indexes = randperm(N)
+    # Obtenemos los índices de los conjuntos
+    index_train = indexes[1:Ntrain]
+    index_val = indexes[Ntrain + 1:Ntrain + Nval]
+    index_test = indexes[Ntrain + Nval + 1:end]
+    # Comprobamos que los vectores resultantes sean igual a N
+    @assert (length(index_train) + length(index_test) + length(index_val)) == N
+    return (index_train, index_val, index_test)
+end
 
 # PARTE 10
 # --------------------------------------------------------------------------
