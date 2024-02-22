@@ -293,3 +293,29 @@ loss(ann, x,y) = (size(y,1) == 1) ? Losses.binarycrossentropy(ann(x),y) : Losses
 ann(inputs')
 
 Flux.train!(loss, ann, [(inputs', targets')], opt_state);
+
+# PARTE 9
+# --------------------------------------------------------------------------
+#= uncoment to use
+using Random;
+x = 3
+N = 20
+for _ in 1:x
+    Ptest = round(rand(), digits=2)     # Porcentaje para el conjunto de prueba
+    index_train, index_test = holdOut(N, Ptest)
+    println("Test: ", Ptest)
+    println()
+    println("Tamaño del conjunto de entrenamiento:", length(index_train)," -> ", index_train)
+    println("Tamaño del conjunto de test: ", length(index_test)," -> ", index_test)
+end;
+Ptest = 0.3
+Pval = 0.2
+index_train, index_val, index_test = holdOut(N, Pval, Ptest)
+println("Test: ", Ptest)
+println("Validacion: ", Pval)
+println()
+# Verificar el tamaño de los conjuntos resultantes
+println("Tamaño del conjunto de entrenamiento:", length(index_train)," -> ", index_train)
+println("Tamaño del conjunto de validación:", length(index_val)," -> ", index_val)
+println("Tamaño del conjunto de test: ", length(index_test)," -> ", index_test)
+=#
