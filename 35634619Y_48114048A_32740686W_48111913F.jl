@@ -238,111 +238,48 @@ end;
 # --------------------------------------------------------------------------
 
 function trainClassANN(topology::AbstractArray{<:Int,1},
-    trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
-    validationDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}=
-    (Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0,0)),
-    testDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}=
-    (Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0,0)),
+    dataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
-    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01,
-    maxEpochsVal::Int=20) 
-     
+    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01) 
     
-    # Separamos los datos de los datasets
-    inputs_train, targets_train = trainingDataset
-    inputs_val, targets_val = validationDataset
-    inputs_test, targets_test = testDataset
+    # topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
+    # Extract inputs and targets from dataset
+    inputs, targets = dataset
 
-    # Transponemos los datos para poder usarlos con Flux
-    inputs_train = transpose(inputs_train)
-    targets_train = transpose(targets_train)
-    inputs_val = transpose(inputs_val)
-    targets_val = transpose(targets_val)
-    inputs_test = transpose(inputs_test)
-    targets_test = transpose(targets_test)
+    # Transpose inputs and targets to match Flux's expectations
+    inputs = transpose(inputs)
+    targets = transpose(targets)
+    # Create the neural network
+    ann = buildClassANN(size(inputs,1), topology, size(targets,1); transferFunctions=transferFunctions)
 
-    # Creamos la RNA:
-    ann = buildClassANN(size(inputs_train,1), topology, size(targets_train,1); transferFunctions=transferFunctions)
-
-    # Creamos loss, función que calcula la pérdida de la red neuronal durante el entrenamiento. (la del enunciado)
+    # Define the loss function
     loss(model, x, y) = (size(y, 1) == 1) ? Losses.binarycrossentropy(model(x), y) : Losses.crossentropy(model(x), y)
 
-    # Configuramos el estado del optimizador Adam (Adaptive Moment Estimation) 
-    #Ponemos básicamente el ritmo ideal de aprendizaje de nuestra ann RNA.
+    # Define the optimizer
     opt_state = Flux.setup(Adam(learningRate), ann)
-
-    # Creamos las variables para guardar el mejor modelo y su loss.
-    best_model = deepcopy(ann)
-    best_val_loss = 0
-    epochs_since_best = 0
-
-    # Creamos los vectores que se utilizan para almacenar los valores de pérdida (loss) durante el 
-    #entrenamiento de la red neuronal en los conjuntos de datos de entrenamiento, validación y prueba, respectivamente.
-    train_losses = Float64[]
-    val_losses = Float64[]
-    test_losses = Float64[]
-
+    # Train the neural network
+    losses = Float64[]
     for epoch in 1:maxEpochs
-
-        #Iniciamos el entrenamiento.
-        Flux.train!(loss, ann, [(inputs_train, targets_train)], opt_state)
-        
-        # Calculamos los valores de pérdida de cada conjunto.
-        train_loss = loss(ann, inputs_train, targets_train)
-        val_loss = loss(ann, inputs_val, targets_val)
-        test_loss = loss(ann, inputs_test, targets_test)
-        
-        # Llevamos los datos recogidos a su vector correspondiente mediante push.
-        push!(train_losses, train_loss)
-        push!(val_losses, val_loss)
-        push!(test_losses, test_loss)
-        if train_loss <= minLoss
+        Flux.train!(loss, ann, [(inputs, targets)], opt_state)
+        current_loss = loss(ann, inputs, targets)
+        push!(losses, current_loss)
+        if current_loss <= minLoss
             break
         end
-        # Si el valor de pérdida de el modelo actual es menor que el de la variable 'mejor modelo' definida 
-        #anteriormente cambiamos las variables antiguas por las de nuetro modelo actual.
-        if val_loss < best_val_loss
-            best_val_loss = val_loss
-            best_model = deepcopy(ann)
-            epochs_since_best = 0           #inicializamos y reiniciamos a la vez un contador de hace cuantos modelos que surgió el mejor.
-        
-        #si el valor de pérdida no es mejor le sumamos una al contador, y 
-        #si este contador sobrepasa o iguala el máximo permitido paramos.
-        else
-            epochs_since_best += 1
-            if epochs_since_best >= maxEpochsVal
-                break
-            end
-        end
-        #Criterio de parada temprana: verificamos que el valor de pérdida actual no sea menor que el permitido.
-
     end
-    #Devolvemos los valores del mejor modelo.
-    return best_model, train_losses, val_losses, test_losses
-end
+
+    # Return the trained neural network and the losses
+    return ann, losses
+end;
 
 function trainClassANN(topology::AbstractArray{<:Int,1},
-    trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
-    validationDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}}=
-    (Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0)),
-    testDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}}=
-    (Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0)),
+    (inputs, targets)::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
-    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01,
-    maxEpochsVal::Int=20) 
+    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01)
 
-    # Convertimos las salidas deseadas a vectores si es necesario
-    if size(trainingDataset[2], 2) > 1
-
-        trainingDataset = (trainingDataset[1], reshape(trainingDataset[2], :, 1))
-
-        validationDataset = (validationDataset[1], reshape(validationDataset[2], :, 1))
-
-        testDataset = (testDataset[1], reshape(testDataset[2], :, 1))
-    end
-
-    # Llamamos a la versión anterior de la función trainClassANN
-    return trainClassANN(topology, trainingDataset; validationDataset, testDataset, transferFunctions, maxEpochs, minLoss, learningRate, maxEpochsVal)
+    # targets = reshape(dataset[2], (length(dataset[2]), 1))
+    dataset = (inputs, reshape(dataset[2], (length(dataset[2]), 1)))
+    trainClassANN(topology, dataset; transferFunctions, maxEpochs, minLoss, learningRate)
 end;
 
 # PARTE 9

@@ -273,9 +273,8 @@ println("Red5: ", ann5)
 =#
 # PARTE 8
 # --------------------------------------------------------------------------
-include("main.jl")
+include("main2.jl")
 topology = [2, 3, 1]
-
 # Define the dataset
 # Inputs: 2D array of real numbers
 inputs = rand(2, 100) # 2 features, 100 samples
@@ -288,7 +287,32 @@ ann, losses = trainClassANN(topology, dataset)
 # Print the losses
 println(losses)
 println(ann)
+#=
 
+using Test
+
+# Definir una función para generar un conjunto de datos de prueba
+function generate_test_dataset(n_samples::Int, n_features::Int, n_classes::Int)
+    inputs = rand(n_samples, n_features)
+    targets = rand(Bool, n_samples)
+    return (inputs, targets)
+end
+
+# Generar algunos conjuntos de datos de prueba
+training_dataset = generate_test_dataset(100, 4, 2)
+validation_dataset = generate_test_dataset(50, 4, 2)
+test_dataset = generate_test_dataset(50, 4, 2)
+
+# Definir una topología de prueba y otras opciones
+topology = [4, 2]
+max_epochs = 10
+min_loss = 0.0
+learning_rate = 0.01
+max_epochs_val = 5
+
+best_model, train_losses, val_losses, test_losses = trainClassANN(topology, training_dataset, validationDataset=validation_dataset, testDataset=test_dataset, maxEpochs=max_epochs, minLoss=min_loss, learningRate=learning_rate, maxEpochsVal=max_epochs_val)
+println(best_model, train_losses, val_losses, test_losses)
+=#
 # PARTE 9
 # --------------------------------------------------------------------------
 #= uncoment to use
