@@ -212,12 +212,10 @@ end;
 
 # PARTE 7
 # --------------------------------------------------------------------------
-
 function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutputs::Int;
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)))
     # topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
     # global ann, numInputsLayer
-    # para que tenemos transferFunctions ?????
     @assert !isempty(topology) "No hay capas ocultas"
 
     ann = Chain()
@@ -227,51 +225,64 @@ function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutp
         numInputsLayer = numOutputsLayer
     end
     # Ultima capa
-    # > o >=
     if numOutputs > 2
         ann = Chain(ann..., Dense(numInputsLayer, numOutputs, identity) );
         ann = Chain(ann..., softmax ); 
     else
-        ann = Chain(ann..., Dense(numInputsLayer, numOutputs,σ))
+        ann = Chain(ann..., Dense(numInputsLayer, numOutputs,transferFunctions[end]))
     end;
     return ann
 end;
 
 #PARTE 8 - Correguir
 # --------------------------------------------------------------------------
-# MIRAR COMO TESTEAR
+
 function trainClassANN(topology::AbstractArray{<:Int,1},
-    dataset::Tuple{AbstractArray{<:Real,2},AbstractArray{Bool,2}};
+    dataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
-    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01)
+    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01) 
+    
     # topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
+    # Extract inputs and targets from dataset
     inputs, targets = dataset
+
+    # Transpose inputs and targets to match Flux's expectations
+    inputs = transpose(inputs)
+    targets = transpose(targets)
+    # Create the neural network
     ann = buildClassANN(size(inputs,1), topology, size(targets,1); transferFunctions=transferFunctions)
 
+    # Define the loss function
+    loss(model, x, y) = (size(y, 1) == 1) ? Losses.binarycrossentropy(model(x), y) : Losses.crossentropy(model(x), y)
+
+    # Define the optimizer
     opt_state = Flux.setup(Adam(learningRate), ann)
-    counter = 1
-    loss(model, x,y) = (size(y,1) == 1) ? Losses.binarycrossentropy(model(x),y) : Losses.crossentropy(model(x),y);
-    while counter != maxEpochs+1
-        #=
-        FALLA EN EL CALCULO DE LOSS AL ENTRENAR
-        =#
-        Flux.train!(loss, ann, [(inputs', targets')], opt_state)
-        counter += 1
+    # Train the neural network
+    losses = Float64[]
+    for epoch in 1:maxEpochs
+        Flux.train!(loss, ann, [(inputs, targets)], opt_state)
+        current_loss = loss(ann, inputs, targets)
+        push!(losses, current_loss)
+        if current_loss <= minLoss
+            break
+        end
     end
-    return ann, loss
+
+    # Return the trained neural network and the losses
+    return ann, losses
 end;
 
 function trainClassANN(topology::AbstractArray{<:Int,1},
     (inputs, targets)::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
-    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01) 
+    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01)
 
     # targets = reshape(dataset[2], (length(dataset[2]), 1))
     dataset = (inputs, reshape(dataset[2], (length(dataset[2]), 1)))
     trainClassANN(topology, dataset; transferFunctions, maxEpochs, minLoss, learningRate)
 end;
 
-# PARTE 9 - Preguntar
+# PARTE 9
 # --------------------------------------------------------------------------
 
 function holdOut(N::Int, P::Real)
@@ -296,16 +307,15 @@ function holdOut(N::Int, Pval::Real, Ptest::Real)
     @assert Ptest < 1 "Valores de test fuera de rango"
     # Permutacion aleatoria de los indices
     #indexes = randperm(N)
-    #index_val = holdOut(N, Pval)
-    #index_test = holdOut(N, Ptest)
     #=
-    while any(x -> x in index_val[2], index_test[2])
-        index_test = holdOut(length(indexes), Ptest)
-    end;
+    index_val = holdOut(N, Pval)
+    index_test = holdOut(N, Ptest)
+    index_train = setdiff(1:N, union(index_test[2], index_val[2]))
+    #while any(x -> x in index_val[2], index_test[2])
+    #    index_test = holdOut(length(indexes), Ptest)
     =#
     # Obtenemos el vecto de entrenamiento con los indices restantes
     # index_train = setdiff(indexes, vcat(index_val[2], index_test[2]))
-
     # Calculamos los tamaños de los conjuntos
     Nval = round(Int, N * Pval)
     Ntest = round(Int, N * Ptest)
