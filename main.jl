@@ -362,16 +362,30 @@ end
 
 
 
-
-
-
-
-
-    function trainClassANN(topology::AbstractArray{<:Int,1}, trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
+function trainClassANN(topology::AbstractArray{<:Int,1}, trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
     validationDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}}=(Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0)),
     testDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}}=(Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0)),
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01,
     maxEpochsVal::Int=20) 
+    
+    # Convertimos las salidas deseadas a vectores si es necesario
+    if size(trainingDataset[2], 2) > 1
+
+        trainingDataset = (trainingDataset[1], reshape(trainingDataset[2], :, 1))
+
+        validationDataset = (validationDataset[1], reshape(validationDataset[2], :, 1))
+
+        testDataset = (testDataset[1], reshape(testDataset[2], :, 1))
+    end
+
+    # Llamamos a la versión anterior de la función trainClassANN
+    return trainClassANN(topology, trainingDataset, validationDataset, testDataset, transferFunctions, maxEpochs, minLoss, learningRate, maxEpochsVal)
+end
+
+
+
+
+
 # PARTE 9
 # --------------------------------------------------------------------------
 
