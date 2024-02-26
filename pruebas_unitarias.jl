@@ -108,13 +108,32 @@ new_normalize_values = normalizeZeroMean(inputs)
 println("Incompleta con copy: ",new_normalize_values[1:15])
 =#
 
+    # Test case 1: Single column matrix
+
 # PARTE 5
 # --------------------------------------------------------------------------
-#= uncoment to use
+#=
+include("main.jl")
 
-test = [0.1,0.5,0.1,0.9,0.8]
-classified = classifyOutputs(test)
-println("Classified outputs: ", classified)
+# Caso 1: Una matriz con una sola columna
+outputs1 = [0.2; 0.7; 0.4]
+expected_output1 = [false; true; false]
+result1 = classifyOutputs(outputs1)
+@assert result1 == expected_output1
+
+# Caso 2: Una matriz con múltiples columnas
+outputs2 = [0.2 0.6; 0.7 0.8; 0.4 0.9]
+expected_output2 = [false true; false true; false true]
+result2 = classifyOutputs(outputs2)
+println(result2)
+println(expected_output2)
+@assert result2 == expected_output2
+
+println("¡Todos los casos de prueba pasaron!")
+
+
+# Llamar a la función de prueba
+test_classifyOutputs()
 
 rows = 5
 cols = 5
@@ -125,7 +144,6 @@ end
 classified = classifyOutputs(random_matrix)
 println(classified)
 =#
-
 # PARTE 6
 # --------------------------------------------------------------------------
 #= uncoment to use
@@ -249,31 +267,37 @@ test_accuracy_real_matrices_custom_threshold()
 =#
 # PARTE 7
 # --------------------------------------------------------------------------
-#NO SE QUE ESTA MAL LA VRD, PREGUNTAR
 # topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
-#=
-topology = [10, 3, 2, 2]
-topology2 = [20, 10]
-topology3 = [1,1]
-topology4 = [25,12, 4]
-topology5 = [25,25, 20, 10, 5, 3, 1]
+function test_buildClassANN()
+    # Caso 1: Red neuronal con una capa oculta
+    numInputs1 = 3
+    topology1 = [4, 7, 3]
+    numOutputs1 = 2
+    ann1 = buildClassANN(numInputs1, topology1, numOutputs1)
+    # Verifica que la red neuronal tenga la estructura esperada
+    println(ann1)
+    @assert length(ann1) == 4  # Número de capas
+    # Opcionalmente, podrías verificar más propiedades de la red neuronal, como el número de neuronas en cada capa, etc.
 
+    # Caso 2: Red neuronal con múltiples capas ocultas
+    numInputs2 = 5
+    topology2 = [7, 3, 2, 4]
+    numOutputs2 = 3
+    ann2 = buildClassANN(numInputs2, topology2, numOutputs2)
+    # Verifica que la red neuronal tenga la estructura esperada
+    
+    println(ann2)
+    @assert length(ann2) == 6 # Número de capas
+    # Otras verificaciones podrían incluir el número de neuronas en cada capa, las funciones de activación utilizadas, etc.
 
-ann = buildClassANN(2, topology, 1)
-ann2 = buildClassANN(4, topology2, 1)
-ann3 = buildClassANN(23, topology3, 3)
-ann4 = buildClassANN(123, topology4, 2)
-ann5 = buildClassANN(20, topology5, 15)
+    println("¡Todos los casos de prueba pasaron!")
+end
 
-println("Red: ", ann)
-println("Red2: ", ann2)
-println("Red3: ", ann3)
-println("Red4: ", ann4)
-println("Red5: ", ann5)
-=#
+# Llamar a la función de prueba
+test_buildClassANN()
 # PARTE 8
 # --------------------------------------------------------------------------
-include("main2.jl")
+include("main.jl")
 topology = [2, 3, 1]
 # Define the dataset
 # Inputs: 2D array of real numbers

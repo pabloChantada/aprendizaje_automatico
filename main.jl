@@ -142,19 +142,18 @@ function classifyOutputs(outputs::AbstractArray{<:Real,1}; threshold::Real=0.5)
 end;
 
 function classifyOutputs(outputs::AbstractArray{<:Real,2}; threshold::Real=0.5)
-    # Recibe una matriz en vez de un vector
     if size(outputs, 2) == 1
-        reshape(outputs, :, 1)
+        outputs = reshape(outputs, :, 1)
         vector_outputs = classifyOutputs(outputs[:]; threshold)
-        return vector_outputs
-        # (maximo cada fila/col, coordenadas del maximo)
+        matrix_outputs = reshape(vector_outputs, size(outputs))
+        return matrix_outputs
     else
         (_, indicesMaxEachInstance) = findmax(outputs, dims=2)
-        outputs = falses(size(outputs))
-        outputs[indicesMaxEachInstance] .= true
-        return outputs
+        matrix_outputs = falses(size(outputs))
+        matrix_outputs[CartesianIndex.(indicesMaxEachInstance)] .= true
+        return matrix_outputs
     end
-end;
+end
 
 # PARTE 6
 # --------------------------------------------------------------------------
@@ -221,7 +220,7 @@ function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutp
     ann = Chain()
     numInputsLayer = numInputs
     for numOutputsLayer = topology
-        ann = Chain(ann..., Dense(numInputsLayer, numOutputsLayer, σ))
+        ann = Chain(ann..., Dense(numInputsLayer, numOutputsLayer, transferFunctions[end]))
         numInputsLayer = numOutputsLayer
     end
     # Ultima capa
