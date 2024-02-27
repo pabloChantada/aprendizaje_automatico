@@ -1,22 +1,17 @@
 #=
 TESTEAR PARTES:
-    7 -> buildClassANN:
-      RNA incorrecta con 2 clases: número de capas incorrecto
-      RNA incorrecta con 2 clases: funcion de activacion incorrecta en la capa 2
-      RNA incorrecta con 2 clases: funcion de activacion incorrecta en la capa 3
-      RNA incorrecta con 2 clases: error al introducir entradas (posiblemente topología incorrecta)
-      Error al ejecutar la función con más de 2 clases: type Int64 has no field σ
     8 -> Función no definida para argumentos de tipo
     9 -> Error al ejecutar con argumentos de tipo (Int, Real): MethodError: no method matching +(::Tuple{Int64}, ::Tuple{Int64})
 =#
-
 include("main.jl")
+#=
+
 
 dataset = readdlm("iris.data",',');
 inputs = dataset[:,1:4];
 inputs = convert(Array{Float32,2},inputs);
 targets = dataset[:,5];
-
+=#
 # PARTE 1
 # --------------------------------------------------------------------------
 #= uncoment to use
@@ -113,13 +108,32 @@ new_normalize_values = normalizeZeroMean(inputs)
 println("Incompleta con copy: ",new_normalize_values[1:15])
 =#
 
+    # Test case 1: Single column matrix
+
 # PARTE 5
 # --------------------------------------------------------------------------
-#= uncoment to use
+#=
+include("main.jl")
 
-test = [0.1,0.5,0.1,0.9,0.8]
-classified = classifyOutputs(test)
-println("Classified outputs: ", classified)
+# Caso 1: Una matriz con una sola columna
+outputs1 = [0.2; 0.7; 0.4]
+expected_output1 = [false; true; false]
+result1 = classifyOutputs(outputs1)
+@assert result1 == expected_output1
+
+# Caso 2: Una matriz con múltiples columnas
+outputs2 = [0.2 0.6; 0.7 0.8; 0.4 0.9]
+expected_output2 = [false true; false true; false true]
+result2 = classifyOutputs(outputs2)
+println(result2)
+println(expected_output2)
+@assert result2 == expected_output2
+
+println("¡Todos los casos de prueba pasaron!")
+
+
+# Llamar a la función de prueba
+test_classifyOutputs()
 
 rows = 5
 cols = 5
@@ -130,10 +144,8 @@ end
 classified = classifyOutputs(random_matrix)
 println(classified)
 =#
-
 # PARTE 6
 # --------------------------------------------------------------------------
-#=
 #= uncoment to use
 # Test para la función accuracy con vectores de valores booleanos
 function test_accuracy_bool_vectors()
@@ -147,39 +159,56 @@ function test_accuracy_bool_vectors()
     # Verificar si el resultado es correcto
     @assert result == 0.6
 
-    println("Test para accuracy con vectores de valores booleanos pasó correctamente.")
+    println("Test para accuracy con vectores de valores booleanos pasó correctamente: ", result)
 end
 
 # Test para la función accuracy con matrices de valores booleanos (1 columna)
 function test_accuracy_bool_matrices_single_column()
     # Datos de prueba
-    targets = [true, false, true, false, true]
-    outputs = [true, false, false, false, true]
-
+    targets = [true; false; false; false]
+    outputs = [true; true; false; true]
+    targets2 = [true false true; false false false; true false false; false false true]
+    outputs2 = [true true false; true false true; true false true; true false true]
     # Llamada a la función accuracy
-    result = accuracy([targets], [outputs])
+    result = accuracy(outputs2, targets2)
 
     # Verificar si el resultado es correcto
-    @assert result == 0.6
+    @assert result == 0.5
 
-    println("Test para accuracy con matrices de valores booleanos (1 columna) pasó correctamente.")
+    println("Test para accuracy con matrices de valores booleanos (1 columna) pasó correctamente.", result)
 end
 
 # Test para la función accuracy con vectores de valores reales y umbral por defecto
 function test_accuracy_real_vector_default_threshold()
     # Datos de prueba
     targets = [true, true, false, false, true]
-    outputs = [0.8, 0.9, 0.2, 0.4, 0.7]
+    outputs = [0.8, 0.9, 0.5, 0.4, 0.2]
 
     # Llamada a la función accuracy
-    result = accuracy(targets, outputs)
+    result = accuracy(outputs, targets)
 
     # Verificar si el resultado es correcto
     @assert result == 0.6
 
-    println("Test para accuracy con vectores de valores reales y umbral por defecto pasó correctamente.")
+    println("Test para accuracy con vectores de valores reales y umbral por defecto pasó correctamente.", result)
 end
 
+# Test para la función accuracy con matrices de valores reales y umbral especificado
+function test_accuracy_real_matrices_custom_threshold()
+    # Datos de prueba
+    targets = [true; false; false; false]
+    outputs = [0.8; 0.9; 0.5; 0.2]
+    targets2 = [true false true; false false true; true false false; false false true]
+    outputs2 = [0.7 0.2 0.5; 0.3 0.3 0.9; 0.8 0.5 1; 0.2 0.1 0.8]
+
+    # Llamada a la función accuracy
+    result = accuracy(outputs2, targets2; threshold=0.7)
+
+    # Verificar si el resultado es correcto
+    @assert result == 0.75
+
+    println("Test para accuracy con matrices de valores reales y umbral especificado pasó correctamente.", result)
+end
 # Test para la función accuracy con matrices de valores reales y umbral especificado
 function test_accuracy_real_matrices_custom_threshold()
     # Datos de prueba
@@ -230,104 +259,174 @@ println("Precisión (vectores de valores reales): ", accuracy(outputs_real_vec, 
 # Caso de prueba para la función de precisión con matrices de valores reales
 outputs_real_mat = [0.6 0.4; 0.3 0.7; 0.8 0.2; 0.9 0.1]
 println("Precisión (matrices de valores reales): ", accuracy(outputs_real_mat, targets_mat))  # Salida esperada: 0.625
+# Ejecutar los tests
+test_accuracy_bool_vectors()
+test_accuracy_bool_matrices_single_column()
+test_accuracy_real_vector_default_threshold()
+test_accuracy_real_matrices_custom_threshold()
 =#
 # PARTE 7
 # --------------------------------------------------------------------------
-#= uncoment to use
-NO SE QUE ESTA MAL LA VRD, PREGUNTAR
 # topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
-topology = [10, 3]
-topology2 = [20, 10]
-topology3 = [100,50]
+#= uncoment to use
+function test_buildClassANN()
+    # Caso 1: Red neuronal con una capa oculta
+    numInputs1 = 3
+    topology1 = [4, 7, 3]
+    numOutputs1 = 2
+    ann1 = buildClassANN(numInputs1, topology1, numOutputs1)
+    # Verifica que la red neuronal tenga la estructura esperada
+    println(ann1)
+    @assert length(ann1) == 4  # Número de capas
+    # Opcionalmente, podrías verificar más propiedades de la red neuronal, como el número de neuronas en cada capa, etc.
 
-ann = buildClassANN(2, topology, 1)
-ann2 = buildClassANN(4, topology2, 1)
-ann3 = buildClassANN(8, topology3, 4)
+    # Caso 2: Red neuronal con múltiples capas ocultas
+    numInputs2 = 5
+    topology2 = [7, 3, 2, 4]
+    numOutputs2 = 3
+    ann2 = buildClassANN(numInputs2, topology2, numOutputs2)
+    # Verifica que la red neuronal tenga la estructura esperada
+    
+    println(ann2)
+    @assert length(ann2) == 6 # Número de capas
+    # Otras verificaciones podrían incluir el número de neuronas en cada capa, las funciones de activación utilizadas, etc.
 
-println("Red: ", ann)
-println("Red2: ", ann2)
-println("Red3: ", ann3)
+    println("¡Todos los casos de prueba pasaron!")
+end
+
+# Llamar a la función de prueba
+test_buildClassANN()
 =#
-
 # PARTE 8
 # --------------------------------------------------------------------------
 
-# TRAIN CLASS ANN
+# PARTE 1
+# --------------------------------------------------------------------------
+include("main.jl")
+# Cargar la base de datos, teniendo los patrones en filas y atributos y salidas deseadas en columnas.
+dataset = readdlm("iris.data",',');
+inputs = dataset[:,1:4];
+inputs = convert(Array{Float32,2},inputs);
+targets = dataset[:,5];
+targets = oneHotEncoding(targets)
 
+# PARTE 2
+# --------------------------------------------------------------------------
+# Utilizar la función holdOut para dividir el conjunto de datos en entrenamiento, validación y test con los porcentajes que se desee.
+train_index, val_index, test_index = holdOut(size(inputs,1), 0.2, 0.3)
+
+inputs_train = inputs[train_index, :]
+targets_train = targets[train_index, :]
+
+inputs_val = inputs[val_index, :]
+targets_val = targets[val_index, :]
+
+inputs_test = inputs[test_index, :]
+targets_test = targets[test_index, :]
+
+# PARTE 3
+# --------------------------------------------------------------------------
+# Calcular los valores de los parámetros correspondientes al tipo de normalización que se va a usar con vuestros datos
+# (máximo/mínimo o media/desviación típica para cada atributo), únicamente del conjunto de entrenamiento.
+println("train: ", inputs_train)
+max_vals, min_vals = calculateMinMaxNormalizationParameters(inputs)
+mean_vals, std_vals = calculateZeroMeanNormalizationParameters(inputs)
+
+# PARTE 4
+# --------------------------------------------------------------------------
+# Con estos valores calculados en el paso anterior, normalizar conjuntos de entrenamiento, validación y test.
+normalizeMinMax!(inputs_train, (min_vals, max_vals))
+normalizeMinMax!(inputs_val, (min_vals, max_vals))
+normalizeMinMax!(inputs_test, (min_vals, max_vals))
+
+topology = [7, 3, 2]
+best_model, train_losses, val_losses, test_losses = trainClassANN(
+    topology, (inputs_train, targets_train),
+    validationDataset=(inputs_val, targets_val),
+    testDataset=(inputs_test, targets_test)
+)
+
+println("Best model: ", best_model)
+println("Train losses: ", train_losses)
+println("Validation losses: ", val_losses)
+println("Test losses: ", test_losses)
+
+
+# PARTE 5
+# --------------------------------------------------------------------------
+# Entrenar distintas arquitecturas y sacar gráficas de cómo ha sido la evolución de los valores de loss de entrenamiento, validación y test en la misma gráfica, incluyendo el ciclo 0
+# (Code for training and plotting the loss values goes here)
+
+using Test
+# con esto funciona
+topology = [7, 3, 2]
+inputs_train = [0.1 0.2 0.3; 0.4 0.5 0.6]
+targets_train = [true false true ; true false true]
+inputs_val = [0.7 0.8 0.9; 1.0 1.1 1.2]
+targets_val = [false true false ; true false true]
+inputs_test = [1.3 1.4 1.5; 1.6 1.7 1.8]
+targets_test = [true false true ; true false true]
+
+# Call the function under test
+best_model, train_losses, val_losses, test_losses = trainClassANN(
+    topology, (inputs_train, targets_train),
+    validationDataset=(inputs_val, targets_val),
+    testDataset=(inputs_test, targets_test)
+)
+
+println("Best model: ", best_model)
+println("Train losses: ", train_losses)
+println("Validation losses: ", val_losses)
+println("Test losses: ", test_losses)
+
+#=
+
+using Test
+
+# Definir una función para generar un conjunto de datos de prueba
+function generate_test_dataset(n_samples::Int, n_features::Int, n_classes::Int)
+    inputs = rand(n_samples, n_features)
+    targets = rand(Bool, n_samples)
+    return (inputs, targets)
+end
+
+# Generar algunos conjuntos de datos de prueba
+training_dataset = generate_test_dataset(100, 4, 2)
+validation_dataset = generate_test_dataset(50, 4, 2)
+test_dataset = generate_test_dataset(50, 4, 2)
+
+# Definir una topología de prueba y otras opciones
+topology = [4, 2]
+max_epochs = 10
+min_loss = 0.0
+learning_rate = 0.01
+max_epochs_val = 5
+
+best_model, train_losses, val_losses, test_losses = trainClassANN(topology, training_dataset, validationDataset=validation_dataset, testDataset=test_dataset, maxEpochs=max_epochs, minLoss=min_loss, learningRate=learning_rate, maxEpochsVal=max_epochs_val)
+println(best_model, train_losses, val_losses, test_losses)
+=#
 # PARTE 9
 # --------------------------------------------------------------------------
-#=
-using Test
-function test_holdOut(N::Int, P::Real)
-    @test begin
-        # Check for valid percentage
-        if P <= 0 || P >= 1
-            throw(ArgumentError("P must be between 0 and 1"))
-        end
-
-        # Call the function
-        (train_indices, test_indices) = holdOut(N, P)
-
-        # Check sizes
-        @assert length(train_indices) + length(test_indices) == N
-        # No duplicates
-        @assert all(unique(train_indices) == train_indices)
-        @assert all(unique(test_indices) == test_indices)
-        # Indices within range
-        @assert all(i >= 1 && i <= N for i in train_indices)
-        @assert all(i >= 1 && i <= N for i in test_indices)
-    end
-end
-function test_holdOut3(N::Int, Pval::Real, Ptest::Real)
-    @test begin
-        # Check for valid percentages
-        if Pval <= 0 || Pval >= 1
-            throw(ArgumentError("Pval must be between 0 and 1"))
-        end
-        if Ptest <= 0 || Ptest >= 1
-            throw(ArgumentError("Ptest must be between 0 and 1"))
-        end
-
-        # Call the function
-        (train_indices, val_indices, test_indices) = holdOut(N, Pval, Ptest)
-
-        # Check sizes
-        @assert length(train_indices) + length(val_indices) + length(test_indices) == N
-        # No duplicates within each set
-        @assert all(unique(train_indices) == train_indices)
-        @assert all(unique(val_indices) == val_indices)
-        @assert all(unique(test_indices) == test_indices)
-        # Indices within range
-        @assert all(i >= 1 && i <= N for i in train_indices)
-        @assert all(i >= 1 && i <= N for i in val_indices)
-        @assert all(i >= 1 && i <= N for i in test_indices)
-    end
-end
-
-# Run tests for various cases
-test_holdOut3(100, 0.1, 0.2)
-test_holdOut3(1000, 0.3, 0.1)
-test_holdOut3(50, 0.25, 0.25)
-# Run tests for various cases
-test_holdOut(100, 0.2)
-test_holdOut(1000, 0.1)
-test_holdOut(50, 0.5)
-
-run_tests()
-
-#test que hice por la cara slay (para comprobar poner un print en holdout igual que el return):
-N = 12          # Número total de muestras
-Pval = 0.2      # Porcentaje para el conjunto de validación
-Ptest = 0.2     # Porcentaje para el conjunto de prueba
-
-# Dividir los datos utilizando la función holdOut
+#= uncoment to use
+using Random;
+x = 3
+N = 10
+for _ in 1:x
+    Ptest = round(rand(), digits=2)     # Porcentaje para el conjunto de prueba
+    index_train, index_test = holdOut(N, Ptest)
+    println()
+    println("Test: ", Ptest)
+    println("Tamaño del conjunto de entrenamiento:", length(index_train)," -> ", index_train)
+    println("Tamaño del conjunto de test: ", length(index_test)," -> ", index_test)
+end;
+Ptest = 0.3
+Pval = 0.2
 index_train, index_val, index_test = holdOut(N, Pval, Ptest)
-
+println("Test: ", Ptest)
+println("Validacion: ", Pval)
+println()
 # Verificar el tamaño de los conjuntos resultantes
-println("Tamaño del conjunto de entrenamiento:", length(index_train))
-println("Tamaño del conjunto de validación:", length(index_val))
-println("Tamaño del conjunto de prueba:", length(index_test))
-
+println("Tamaño del conjunto de entrenamiento:", length(index_train)," -> ", index_train)
+println("Tamaño del conjunto de validación:", length(index_val)," -> ", index_val)
+println("Tamaño del conjunto de test: ", length(index_test)," -> ", index_test)
 =#
-=#
-
