@@ -12,25 +12,24 @@ using FileIO;
 using DelimitedFiles;
 using Statistics;
 using Random;
-
 # PARTE 1
 # --------------------------------------------------------------------------
 
 function oneHotEncoding(feature::AbstractArray{<:Any,1}, classes::AbstractArray{<:Any,1})
-    numClasses = length(classes);
-    @assert numClasses>1 "solo hay una clase";
-    if numClasses==2
+    numClasses = length(classes)
+    @assert numClasses > 1 "solo hay una clase"
+    if numClasses == 2
         # Si solo hay dos clases, se devuelve una matriz con una columna.
-        one_col_matrix = reshape(feature.==classes[1], :, 1);
+        one_col_matrix = reshape(feature .== classes[1], :, 1)
         return one_col_matrix
     else
         # Si hay mas de dos clases se devuelve una matriz con una columna por clase.
-        oneHot = Array{Bool,2}(undef, length(feature), numClasses);
+        oneHot = Array{Bool,2}(undef, length(feature), numClasses)
         for numClass = 1:numClasses
-            oneHot[:,numClass] .= (feature.==classes[numClass]);
-        end;
+            oneHot[:, numClass] .= (feature .== classes[numClass])
+        end
         return oneHot
-    end;
+    end
 end;
 
 function oneHotEncoding(feature::AbstractArray{<:Any,1})
@@ -48,14 +47,14 @@ end;
 function calculateMinMaxNormalizationParameters(dataset::AbstractArray{<:Real,2}) # vectores de ints y floats
     # recibe una matriz
     # duvuelve una tupla con
-        # matriz de 1 fila -> min de cada columna
-        # matriz de 1 fila -> max de cada columna
+    # matriz de 1 fila -> min de cada columna
+    # matriz de 1 fila -> max de cada columna
     min_col = minimum(dataset, dims=1)
     max_col = maximum(dataset, dims=1)
     return (min_col, max_col)
 end;
 
-function calculateZeroMeanNormalizationParameters(dataset::AbstractArray{<:Real,2}) 
+function calculateZeroMeanNormalizationParameters(dataset::AbstractArray{<:Real,2})
     mean_col = mean(dataset, dims=1)
     std_col = std(dataset, dims=1)
     return (mean_col, std_col)
@@ -65,7 +64,7 @@ end;
 # PARTE 3
 # --------------------------------------------------------------------------
 
-function normalizeMinMax!(dataset::AbstractArray{<:Real,2}, normalizationParameters::NTuple{2, AbstractArray{<:Real,2}})
+function normalizeMinMax!(dataset::AbstractArray{<:Real,2}, normalizationParameters::NTuple{2,AbstractArray{<:Real,2}})
     # Normalizar entre el max y el min
     # Matriz de valores a normalizar y parametros de normalizacion
     min_values, max_values = normalizationParameters[1], normalizationParameters[2]
@@ -74,7 +73,7 @@ function normalizeMinMax!(dataset::AbstractArray{<:Real,2}, normalizationParamet
     # Caso de que los valores sean 0
     # range_values[range_values .== 0] .= 1
     dataset ./= (range_values)
-    dataset[:, vec(min_values.==max_values)] .= 0
+    dataset[:, vec(min_values .== max_values)] .= 0
     return dataset
 end;
 
@@ -83,7 +82,7 @@ function normalizeMinMax!(dataset::AbstractArray{<:Real,2})
     return normalizeMinMax!(dataset, normalizationParameters)
 end;
 
-function normalizeMinMax(dataset::AbstractArray{<:Real,2}, normalizationParameters::NTuple{2, AbstractArray{<:Real,2}})
+function normalizeMinMax(dataset::AbstractArray{<:Real,2}, normalizationParameters::NTuple{2,AbstractArray{<:Real,2}})
     # MEJOR COPY O DEEPCOPY EN ESTE CASO?
     new_dataset = copy(dataset)
     min_values, max_values = normalizationParameters[1], normalizationParameters[2]
@@ -92,7 +91,7 @@ function normalizeMinMax(dataset::AbstractArray{<:Real,2}, normalizationParamete
     # Caso de que los valores sean 0
     # range_values[range_values .== 0] .= 1
     new_dataset ./= (range_values)
-    new_dataset[:, vec(min_values.==max_values)] .= 0
+    new_dataset[:, vec(min_values .== max_values)] .= 0
     return new_dataset
 end;
 
@@ -104,11 +103,11 @@ end;
 # PARTE 4
 # --------------------------------------------------------------------------
 
-function normalizeZeroMean!(dataset::AbstractArray{<:Real,2},normalizationParameters::NTuple{2, AbstractArray{<:Real,2}})
+function normalizeZeroMean!(dataset::AbstractArray{<:Real,2}, normalizationParameters::NTuple{2,AbstractArray{<:Real,2}})
     avg_values, std_values = normalizationParameters[1], normalizationParameters[2]
     dataset .-= avg_values
     dataset ./= std_values
-    dataset[:, vec(std_values .== 0)] .= 0;
+    dataset[:, vec(std_values .== 0)] .= 0
     return dataset
 end;
 
@@ -117,12 +116,12 @@ function normalizeZeroMean!(dataset::AbstractArray{<:Real,2})
     return normalizeZeroMean!(dataset, normalizationParameters)
 end;
 
-function normalizeZeroMean(dataset::AbstractArray{<:Real,2},normalizationParameters::NTuple{2, AbstractArray{<:Real,2}})
+function normalizeZeroMean(dataset::AbstractArray{<:Real,2}, normalizationParameters::NTuple{2,AbstractArray{<:Real,2}})
     new_dataset = copy(dataset)
     avg_values, std_values = normalizationParameters[1], normalizationParameters[2]
     new_dataset .-= avg_values
     new_dataset ./= std_values
-    new_dataset[:, vec(std_values .== 0)] .= 0;
+    new_dataset[:, vec(std_values .== 0)] .= 0
     return new_dataset
 end;
 
@@ -132,69 +131,71 @@ function normalizeZeroMean(dataset::AbstractArray{<:Real,2})
 end;
 
 
-# PARTE 5
+# PARTE 5 - Preguntar
 # --------------------------------------------------------------------------
 
 function classifyOutputs(outputs::AbstractArray{<:Real,1}; threshold::Real=0.5)
     # outputs -> vector de salidas, no necesariamente un una RNA
     # threshold -> opcional
-    results = outputs .>= threshold
-    return results
+    return outputs .>= threshold
 end;
 
 function classifyOutputs(outputs::AbstractArray{<:Real,2}; threshold::Real=0.5)
-    # Recibe una matriz en vez de un vector
-    if size(outputs) == 1
+    if size(outputs, 2) == 1
+        outputs = reshape(outputs, :, 1)
         vector_outputs = classifyOutputs(outputs[:]; threshold)
-        return reshape(vector_outputs, : ,1)
+        matrix_outputs = reshape(vector_outputs, size(outputs))
+        return matrix_outputs
     else
-        # (maximo cada fila/col, coordenadas del maximo)
-        (_,indicesMaxEachInstance) = findmax(outputs, dims=2); 
-        outputs = falses(size(outputs)); 
-        outputs[indicesMaxEachInstance] .= true
-        return outputs
-    end;
-end;
+        (_, indicesMaxEachInstance) = findmax(outputs, dims=2)
+        matrix_outputs = falses(size(outputs))
+        matrix_outputs[CartesianIndex.(indicesMaxEachInstance)] .= true
+        return matrix_outputs
+    end
+end
 
 # PARTE 6
 # --------------------------------------------------------------------------
 
 function accuracy(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1})
     #Las matrices targets y outputs deben tener la misma longitud.
-    @assert length(targets) == length(outputs)  
+    @assert length(targets) == length(outputs)
     #Divide el número de coincidencias entre el tamaño del vector targets para saber la media de aciertos.
     return sum(targets .== outputs) / length(targets)
 end;
 
 function accuracy(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2})
     #Las matrices targets y outputs deben tener las mismas dimensiones.
-    @assert size(targets) == size(outputs) 
+    @assert size(targets) == size(outputs)
     # Si ambas matrices tienen una sola columna:
     if size(targets, 2) == 1 && size(outputs, 2) == 1
         #Llama a la función accuracy creada enteriormente.
         return accuracy(vec(targets), vec(outputs))
-    # Si ambas matrices tienen más de una columna
+        # Si ambas matrices tienen más de una columna
     else
-    #calcula la cantidad de diferencias entre las dos matrices, fila por fila.
+        #calcula la cantidad de diferencias entre las dos matrices, fila por fila.
         mismatches = sum(targets .!= outputs, dims=2)
         #Cuenta el número de filas con al menos una diferencia, y lo divide entre 
         #el número total de filas, valor el cual se resta de 1 para obtener la precisión.
-        return 1.0 - count(mismatches .> 0) / size(targets, 1)
-    end;
+        # print(1.0 - count(mismatches .> 0) / size(targets, 1)) -> 0
+        return 1.0 - (sum(mismatches) / (size(targets)[1] * size(targets)[2]))
+    end
 end;
 
 function accuracy(outputs::AbstractArray{<:Real,1}, targets::AbstractArray{Bool,1}; threshold::Real=0.5)
     #Los vectores targets y outputs deben tener la misma longitud.
-    @assert length(targets) == length(outputs) 
+    @assert length(targets) == length(outputs)
     #compara cada elemento del vector outputs con el umbral especificado y devuelve un vector
     #cuyos elementos indican si el valor es mayor o igual al umbral.
     outputs_bool = outputs .>= threshold
     #Llamamos a la función creada antes y esta se encargará de comparar los vectores booleanos targets y outputs_bool y calcular la precisión del modelo.
     return accuracy(targets, outputs_bool)
 end;
-    
+
 function accuracy(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; threshold::Real=0.5)
-    @assert size(targets) == size(outputs) 
+    #Las matrices targets y outputs deben tener las mismas dimensiones
+    @assert size(targets) == size(outputs)
+    #Comprueba si la matriz outputs tiene una sola columna.
     if size(outputs, 2) == 1
         # outputs tiene una sola columna, llamamos a la función accuracy creada anteriormente.
         return accuracy(outputs[:, 1], targets[:, 1])
@@ -203,88 +204,47 @@ function accuracy(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,
         #en una matriz de valores booleanos.
         outputs_bool = classifyOutputs(outputs; threshold)
         #Llamamos a la función creada antes y esta se encargará de comparar los vectores booleanos targets y outputs_bool y calcular la precisión del modelo.
-        return accuracy(targets, outputs_bool)
+        return accuracy(outputs_bool, targets)
     end
-end
+end;
 
 # PARTE 7
 # --------------------------------------------------------------------------
-
 function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutputs::Int;
-    transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology))) 
+    transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)))
     # topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
-    # global ann, numInputsLayer para usar fuera de la funcion
+    # global ann, numInputsLayer
     @assert !isempty(topology) "No hay capas ocultas"
-    
+
     ann = Chain()
     numInputsLayer = numInputs
     for numOutputsLayer = topology
-        ann = Chain(ann..., Dense(numInputsLayer, numOutputsLayer, transferFunctions[1]))
+        ann = Chain(ann..., Dense(numInputsLayer, numOutputsLayer, transferFunctions[end]))
         numInputsLayer = numOutputsLayer
-    end;
+    end
     # Ultima capa
     if numOutputs > 2
-        ann = Chain(ann..., numOutputs, softmax)
+        ann = Chain(ann..., Dense(numInputsLayer, numOutputs, identity) );
+        ann = Chain(ann..., softmax ); 
     else
-        ann = Chain(ann..., numOutputs, sigmoid)
+        ann = Chain(ann..., Dense(numInputsLayer, numOutputs,transferFunctions[end]))
     end;
     return ann
 end;
 
-#PARTE 8
+#PARTE 8 - comprobnar
 # --------------------------------------------------------------------------
-
-# MIRAR COMO TESTEAR
 function trainClassANN(topology::AbstractArray{<:Int,1},
-    dataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
+    trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
+    validationDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}=
+    (Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0,0)),
+    testDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}=
+    (Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0,0)),
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
-    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01)
-    #=
-    topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
-    Criterios de Parada
-        maxIterations
-        minLoss
-        learningRate
-    =#
-    # Creacion de la neurona
-    inputs = dataset[1];
-    num_inputs = size(inputs)
-    targets = dataset[2];
-    num_targets = size(targets)
-    ann = buildClassANN(num_inputs, topology, num_targets; transferFunctions=transferFunctions)
+    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01,
+    maxEpochsVal::Int=20) 
+     
     
-    opt_state = Flux.setup(Adam(learningRate), ann)
-    loss_data = []
-    counter = 0
-    while counter != maxEpochs
-        Flux.train!(loss, ann, [(inputs', targets')], opt_state);
-        loss(ann, inputs, targets) = Losses.binarycrossentropy(ann(inputs), targets) 
-        push!(loss_data, (counter, loss))
-        counter += 1
-    end;
-    return (ann, loss_data)
-end;
-
-function trainClassANN(topology::AbstractArray{<:Int,1},
-    (inputs, targets)::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
-    transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
-    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01) 
-
-    if size(targets, 2) > 1
-        targets = reshape(targets, (:, 1))
-    end;
-    dataset = (inputs, targets)
-    trainClassANN(topology, dataset; transferFunctions, maxEpochs, minLoss, learningRate)
-end;
-
-
-
-function trainClassANN(topology::AbstractArray{<:Int,1}, trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
-        validationDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}=(Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0,0)),
-        testDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}=(Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0,0)),
-        transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)), maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01,
-        maxEpochsVal::Int=20)
-
     # Separamos los datos de los datasets
     inputs_train, targets_train = trainingDataset
     inputs_val, targets_val = validationDataset
@@ -307,12 +267,12 @@ function trainClassANN(topology::AbstractArray{<:Int,1}, trainingDataset::Tuple{
     # Configuramos el estado del optimizador Adam (Adaptive Moment Estimation) 
     #Ponemos básicamente el ritmo ideal de aprendizaje de nuestra ann RNA.
     opt_state = Flux.setup(Adam(learningRate), ann)
-    
+
     # Creamos las variables para guardar el mejor modelo y su loss.
     best_model = deepcopy(ann)
-    best_val_loss = Inf
+    best_val_loss = 0
     epochs_since_best = 0
-    
+
     # Creamos los vectores que se utilizan para almacenar los valores de pérdida (loss) durante el 
     #entrenamiento de la red neuronal en los conjuntos de datos de entrenamiento, validación y prueba, respectivamente.
     train_losses = Float64[]
@@ -333,7 +293,9 @@ function trainClassANN(topology::AbstractArray{<:Int,1}, trainingDataset::Tuple{
         push!(train_losses, train_loss)
         push!(val_losses, val_loss)
         push!(test_losses, test_loss)
-        
+        if train_loss <= minLoss
+            break
+        end
         # Si el valor de pérdida de el modelo actual es menor que el de la variable 'mejor modelo' definida 
         #anteriormente cambiamos las variables antiguas por las de nuetro modelo actual.
         if val_loss < best_val_loss
@@ -350,41 +312,36 @@ function trainClassANN(topology::AbstractArray{<:Int,1}, trainingDataset::Tuple{
             end
         end
         #Criterio de parada temprana: verificamos que el valor de pérdida actual no sea menor que el permitido.
-        if train_loss <= minLoss
-            break
-        end
+
     end
-    
     #Devolvemos los valores del mejor modelo.
+    println("Best model: ", typeof(best_model))
     return best_model, train_losses, val_losses, test_losses
 end
-    
 
-
-
-function trainClassANN(topology::AbstractArray{<:Int,1}, trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
-    validationDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}}=(Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0)),
-    testDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}}=(Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0)),
-    transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01,
+# seguramente falle aqui
+function trainClassANN(topology::AbstractArray{<:Int,1},
+    trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
+    validationDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}}=
+    (Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0)),
+    testDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}}=
+    (Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0)),
+    transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
+    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01,
     maxEpochsVal::Int=20) 
-    
+
+    # Convertimos las salidas deseadas a vectores si es necesario
+    # dataset = (inputs, reshape(dataset[2], (length(dataset[2]), 1)))
     # Convertimos las salidas deseadas a vectores si es necesario
     if size(trainingDataset[2], 2) > 1
-
         trainingDataset = (trainingDataset[1], reshape(trainingDataset[2], :, 1))
-
         validationDataset = (validationDataset[1], reshape(validationDataset[2], :, 1))
-
         testDataset = (testDataset[1], reshape(testDataset[2], :, 1))
     end
 
-    # Llamamos a la versión anterior de la función trainClassANN
-    return trainClassANN(topology, trainingDataset, validationDataset, testDataset, transferFunctions, maxEpochs, minLoss, learningRate, maxEpochsVal)
+    # Llamamos a la otra versión de la función trainClassANN
+    return trainClassANN(topology, trainingDataset; validationDataset, testDataset, transferFunctions, maxEpochs, minLoss, learningRate, maxEpochsVal)
 end
-
-
-
-
 
 # PARTE 9
 # --------------------------------------------------------------------------
@@ -393,24 +350,87 @@ function holdOut(N::Int, P::Real)
     # N -> numero de patrones
     # P -> valor entre 0 y 1, indica el porcentaje para el test
     # numero de patrones para el test
-    @assert P > 0 && P < 1 "Valores fuera de rango"
+    @assert P < 1 "Valores de test fuera de rango"
     test_size = Int(floor(N * P))
     # permutamos los datos
     index_perm = randperm(N)
     index_test = index_perm[1:test_size]
     index_train = index_perm[test_size+1:end]
     @assert length(index_test) + length(index_train) == N
-    return(index_train, index_test)
+    return (index_train, index_test)
 end;
 
 function holdOut(N::Int, Pval::Real, Ptest::Real)
     # N -> numero de patrones
     # Pval -> valor entre 0 y 1, tasa de patrones del conjunto de validacion
     # Ptest -> valor entre 0 y 1, tasa de patrones del conjunto de prueba
-    index_test = holdOut(N, Ptest)
-    index_val = holdOut(N, Pval)
-    #ESTA LINEA NO LA TENGO TAN CLARA LOL NO SE SI ES [1] O [2]
-    index_train = setdiff(1:N, union(index_test[2], index_val[2]))
-    @assert length(index_train) + length(index_val[2]) + length(index_test[2]) == N
-    return (index_train, index_val[2], index_test[2])
+    @assert Pval < 1 "Valores de validacion fuera de rango"
+    @assert Ptest < 1 "Valores de test fuera de rango"
+    # Permutacion aleatoria de los indices
+    Nval = round(Int, N * Pval)
+    Ntest = round(Int, N * Ptest)
+    Ntrain = N - Nval - Ntest
+    # Permutación aleatoria de los índices
+    indexes = randperm(N)
+    # Obtenemos los índices de los conjuntos
+    index_train = indexes[1:Ntrain]
+    index_val = indexes[Ntrain + 1:Ntrain + Nval]
+    index_test = indexes[Ntrain + Nval + 1:end]
+    # Comprobamos que los vectores resultantes sean igual a N
+    @assert (length(index_train) + length(index_test) + length(index_val)) == N
+    return (index_train, index_val, index_test)
+end
+
+# PARTE 10
+# --------------------------------------------------------------------------
+# 4.1 - Devuelve matriz y  metrica
+function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1})
+    #
+    # Codigo a desarrollar
+    #
+end;
+
+function confusionMatrix(outputs::AbstractArray{<:Real,1}, targets::AbstractArray{Bool,1}; threshold::Real=0.5)
+    #
+    # Codigo a desarrollar
+    #
+end;
+
+function printConfusionMatrix(outputs::AbstractArray{Bool,1},
+    targets::AbstractArray{Bool,1})
+end;
+
+function printConfusionMatrix(outputs::AbstractArray{<:Real,1},
+    targets::AbstractArray{Bool,1}; threshold::Real=0.5)
+end;
+
+# 4.2
+function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
+    #
+    # Codigo a desarrollar
+    #
+end;
+
+function confusionMatrix(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
+    #
+    # Codigo a desarrollar
+    #
+end;
+
+function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray{<:Any,1}; weighted::Bool=true)
+    #
+    # Codigo a desarrollar
+    #
+end;
+
+function printConfusionMatrix(outputs::AbstractArray{Bool,2},
+    targets::AbstractArray{Bool,2}; weighted::Bool=true)
+end;
+
+function printConfusionMatrix(outputs::AbstractArray{<:Real,2},
+    targets::AbstractArray{Bool,2}; weighted::Bool=true)
+end;
+
+function printConfusionMatrix(outputs::AbstractArray{<:Any,1},
+    targets::AbstractArray{<:Any,1}; weighted::Bool=true)
 end;
