@@ -12,7 +12,6 @@ using FileIO;
 using DelimitedFiles;
 using Statistics;
 using Random;
-
 # PARTE 1
 # --------------------------------------------------------------------------
 
@@ -132,7 +131,7 @@ function normalizeZeroMean(dataset::AbstractArray{<:Real,2})
 end;
 
 
-# PARTE 5
+# PARTE 5 - Preguntar
 # --------------------------------------------------------------------------
 
 function classifyOutputs(outputs::AbstractArray{<:Real,1}; threshold::Real=0.5)
@@ -233,9 +232,8 @@ function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutp
     return ann
 end;
 
-#PARTE 8 - Correguir
+#PARTE 8 - comprobnar
 # --------------------------------------------------------------------------
-
 function trainClassANN(topology::AbstractArray{<:Int,1},
     trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
     validationDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}=
@@ -317,9 +315,11 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
 
     end
     #Devolvemos los valores del mejor modelo.
+    println("Best model: ", typeof(best_model))
     return best_model, train_losses, val_losses, test_losses
 end
 
+# seguramente falle aqui
 function trainClassANN(topology::AbstractArray{<:Int,1},
     trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
     validationDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}}=
@@ -331,18 +331,17 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     maxEpochsVal::Int=20) 
 
     # Convertimos las salidas deseadas a vectores si es necesario
+    # dataset = (inputs, reshape(dataset[2], (length(dataset[2]), 1)))
+    # Convertimos las salidas deseadas a vectores si es necesario
     if size(trainingDataset[2], 2) > 1
-
         trainingDataset = (trainingDataset[1], reshape(trainingDataset[2], :, 1))
-
         validationDataset = (validationDataset[1], reshape(validationDataset[2], :, 1))
-
         testDataset = (testDataset[1], reshape(testDataset[2], :, 1))
     end
 
-    # Llamamos a la versión anterior de la función trainClassANN
+    # Llamamos a la otra versión de la función trainClassANN
     return trainClassANN(topology, trainingDataset; validationDataset, testDataset, transferFunctions, maxEpochs, minLoss, learningRate, maxEpochsVal)
-end;
+end
 
 # PARTE 9
 # --------------------------------------------------------------------------
@@ -368,17 +367,6 @@ function holdOut(N::Int, Pval::Real, Ptest::Real)
     @assert Pval < 1 "Valores de validacion fuera de rango"
     @assert Ptest < 1 "Valores de test fuera de rango"
     # Permutacion aleatoria de los indices
-    #indexes = randperm(N)
-    #=
-    index_val = holdOut(N, Pval)
-    index_test = holdOut(N, Ptest)
-    index_train = setdiff(1:N, union(index_test[2], index_val[2]))
-    #while any(x -> x in index_val[2], index_test[2])
-    #    index_test = holdOut(length(indexes), Ptest)
-    =#
-    # Obtenemos el vecto de entrenamiento con los indices restantes
-    # index_train = setdiff(indexes, vcat(index_val[2], index_test[2]))
-    # Calculamos los tamaños de los conjuntos
     Nval = round(Int, N * Pval)
     Ntest = round(Int, N * Ptest)
     Ntrain = N - Nval - Ntest

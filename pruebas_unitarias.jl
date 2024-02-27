@@ -268,6 +268,7 @@ test_accuracy_real_matrices_custom_threshold()
 # PARTE 7
 # --------------------------------------------------------------------------
 # topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
+#= uncoment to use
 function test_buildClassANN()
     # Caso 1: Red neuronal con una capa oculta
     numInputs1 = 3
@@ -295,22 +296,89 @@ end
 
 # Llamar a la función de prueba
 test_buildClassANN()
+=#
 # PARTE 8
 # --------------------------------------------------------------------------
-include("main.jl")
-topology = [2, 3, 1]
-# Define the dataset
-# Inputs: 2D array of real numbers
-inputs = rand(2, 100) # 2 features, 100 samples
-# Targets: 2D array of booleans
-targets = rand(Bool, 2, 100) # 1 target variable, 100 samples
-dataset = (inputs, targets)
-# Train the neural network
-ann, losses = trainClassANN(topology, dataset)
 
-# Print the losses
-println(losses)
-println(ann)
+# PARTE 1
+# --------------------------------------------------------------------------
+include("main.jl")
+# Cargar la base de datos, teniendo los patrones en filas y atributos y salidas deseadas en columnas.
+dataset = readdlm("iris.data",',');
+inputs = dataset[:,1:4];
+inputs = convert(Array{Float32,2},inputs);
+targets = dataset[:,5];
+targets = oneHotEncoding(targets)
+
+# PARTE 2
+# --------------------------------------------------------------------------
+# Utilizar la función holdOut para dividir el conjunto de datos en entrenamiento, validación y test con los porcentajes que se desee.
+train_index, val_index, test_index = holdOut(size(inputs,1), 0.2, 0.3)
+
+inputs_train = inputs[train_index, :]
+targets_train = targets[train_index, :]
+
+inputs_val = inputs[val_index, :]
+targets_val = targets[val_index, :]
+
+inputs_test = inputs[test_index, :]
+targets_test = targets[test_index, :]
+
+# PARTE 3
+# --------------------------------------------------------------------------
+# Calcular los valores de los parámetros correspondientes al tipo de normalización que se va a usar con vuestros datos
+# (máximo/mínimo o media/desviación típica para cada atributo), únicamente del conjunto de entrenamiento.
+println("train: ", inputs_train)
+max_vals, min_vals = calculateMinMaxNormalizationParameters(inputs)
+mean_vals, std_vals = calculateZeroMeanNormalizationParameters(inputs)
+
+# PARTE 4
+# --------------------------------------------------------------------------
+# Con estos valores calculados en el paso anterior, normalizar conjuntos de entrenamiento, validación y test.
+normalizeMinMax!(inputs_train, (min_vals, max_vals))
+normalizeMinMax!(inputs_val, (min_vals, max_vals))
+normalizeMinMax!(inputs_test, (min_vals, max_vals))
+
+topology = [7, 3, 2]
+best_model, train_losses, val_losses, test_losses = trainClassANN(
+    topology, (inputs_train, targets_train),
+    validationDataset=(inputs_val, targets_val),
+    testDataset=(inputs_test, targets_test)
+)
+
+println("Best model: ", best_model)
+println("Train losses: ", train_losses)
+println("Validation losses: ", val_losses)
+println("Test losses: ", test_losses)
+
+
+# PARTE 5
+# --------------------------------------------------------------------------
+# Entrenar distintas arquitecturas y sacar gráficas de cómo ha sido la evolución de los valores de loss de entrenamiento, validación y test en la misma gráfica, incluyendo el ciclo 0
+# (Code for training and plotting the loss values goes here)
+
+using Test
+# con esto funciona
+topology = [7, 3, 2]
+inputs_train = [0.1 0.2 0.3; 0.4 0.5 0.6]
+targets_train = [true false true ; true false true]
+inputs_val = [0.7 0.8 0.9; 1.0 1.1 1.2]
+targets_val = [false true false ; true false true]
+inputs_test = [1.3 1.4 1.5; 1.6 1.7 1.8]
+targets_test = [true false true ; true false true]
+
+# Call the function under test
+best_model, train_losses, val_losses, test_losses = trainClassANN(
+    topology, (inputs_train, targets_train),
+    validationDataset=(inputs_val, targets_val),
+    testDataset=(inputs_test, targets_test)
+)
+
+println("Best model: ", best_model)
+println("Train losses: ", train_losses)
+println("Validation losses: ", val_losses)
+println("Test losses: ", test_losses)
+
 #=
 
 using Test
