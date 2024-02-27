@@ -242,7 +242,7 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     (Array{eltype(trainingDataset[1]),2}(undef,0,0), falses(0,0)),
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01,
-    maxEpochsVal::Int=20) 
+    maxEpochsVal::Int=20)
      
     
     # Separamos los datos de los datasets
@@ -385,23 +385,54 @@ end
 # --------------------------------------------------------------------------
 # 4.1 - Devuelve matriz y  metrica
 function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1})
-    #
-    # Codigo a desarrollar
-    #
+    # Matrices cuadradadas = clases x clases
+    # Muestra la distribucion de los patrones y la clasificacion que hace el modelo
+    # Filas -> como ha efectuado el modelo
+    # Columnas -> valores reales
+    #=
+    [VN FP;
+     FN VP]
+    =#
+    matrix = [sum((outputs .== 0) .& (targets .== 0)) sum((outputs .== 0) .& (targets .== 1));
+              sum((outputs .== 1) .& (targets .== 0)) sum((outputs .== 1) .& (targets .== 1))] 
+    vn, fp, fn, vp = matrix[1,1], matrix[1,2], matrix[2,1], matrix[2,2]
+    matrix_accuracy = (vn + vp) / (vn + vp + fn + fp)
+    fail_rate = (fn + fp) / (vn + vp + fn + fp)
+
+    # fn + vp > 0 ? 1 : 0 ->if fn + vp > 0; true = 1, false = 0 * ecuacion
+    sensitivity = vp / (fn + vp) * (fn + vp > 0 ? 1 : 0)
+    specificity = vn / (vn + fp) * (vn + fp > 0 ? 1 : 0)
+    positive_predictive_value = vp / (vp + fp) * (vp + fp > 0 ? 1 : 0)
+    negative_predictive_value = vn / (vn + fn) * (vn + fn > 0 ? 1 : 0)
+    f_score = (positive_predictive_value * sensitivity) / (positive_predictive_value + sensitivity) * (positive_predictive_value + sensitivity > 0 ? 1 : 0)
+    return matrix_accuracy, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix 
 end;
 
 function confusionMatrix(outputs::AbstractArray{<:Real,1}, targets::AbstractArray{Bool,1}; threshold::Real=0.5)
     #
-    # Codigo a desarrollar
+    new_outputs = classifyOutputs(outputs; threshold)
+    return confusionMatrix(new_outputs, targets)
     #
 end;
 
 function printConfusionMatrix(outputs::AbstractArray{Bool,1},
     targets::AbstractArray{Bool,1})
+    #
+    matrix = confusionMatrix(outputs, targets)[8]
+    println("Matriz de confusión: \n")
+    println("VN: ", matrix[1,1], " FP: ", matrix[1,2])
+    println("FN: ", matrix[2,1], " VP: ", matrix[2,2])
+    #
 end;
 
 function printConfusionMatrix(outputs::AbstractArray{<:Real,1},
     targets::AbstractArray{Bool,1}; threshold::Real=0.5)
+    #
+    matrix = confusionMatrix(outputs, targets; threshold=threshold)[8]
+    println("Matriz de confusión: \n")
+    println("VN: ", matrix[1,1], " FP: ", matrix[1,2])
+    println("FN: ", matrix[2,1], " VP: ", matrix[2,2])
+    #
 end;
 
 # 4.2

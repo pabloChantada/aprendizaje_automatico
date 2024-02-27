@@ -302,6 +302,8 @@ test_buildClassANN()
 
 # PARTE 1
 # --------------------------------------------------------------------------
+#= uncoment to use
+
 include("main.jl")
 # Cargar la base de datos, teniendo los patrones en filas y atributos y salidas deseadas en columnas.
 dataset = readdlm("iris.data",',');
@@ -313,7 +315,7 @@ targets = oneHotEncoding(targets)
 # PARTE 2
 # --------------------------------------------------------------------------
 # Utilizar la función holdOut para dividir el conjunto de datos en entrenamiento, validación y test con los porcentajes que se desee.
-train_index, val_index, test_index = holdOut(size(inputs,1), 0.2, 0.3)
+train_index, val_index, test_index = holdOut(size(inputs,1), 0.25, 0.25)
 
 inputs_train = inputs[train_index, :]
 targets_train = targets[train_index, :]
@@ -328,7 +330,7 @@ targets_test = targets[test_index, :]
 # --------------------------------------------------------------------------
 # Calcular los valores de los parámetros correspondientes al tipo de normalización que se va a usar con vuestros datos
 # (máximo/mínimo o media/desviación típica para cada atributo), únicamente del conjunto de entrenamiento.
-println("train: ", inputs_train)
+# println("train: ", inputs_train)
 max_vals, min_vals = calculateMinMaxNormalizationParameters(inputs)
 mean_vals, std_vals = calculateZeroMeanNormalizationParameters(inputs)
 
@@ -339,11 +341,15 @@ normalizeMinMax!(inputs_train, (min_vals, max_vals))
 normalizeMinMax!(inputs_val, (min_vals, max_vals))
 normalizeMinMax!(inputs_test, (min_vals, max_vals))
 
-topology = [7, 3, 2]
+# PARTE 5
+# --------------------------------------------------------------------------
+# Entrenar distintas arquitecturas y sacar gráficas de cómo ha sido la evolución de los valores de loss de entrenamiento, validación y 
+# test en la misma gráfica, incluyendo el ciclo 0
+topology = [5, 7, 2]
 best_model, train_losses, val_losses, test_losses = trainClassANN(
     topology, (inputs_train, targets_train),
     validationDataset=(inputs_val, targets_val),
-    testDataset=(inputs_test, targets_test)
+    testDataset=(inputs_test, targets_test),
 )
 
 println("Best model: ", best_model)
@@ -351,11 +357,35 @@ println("Train losses: ", train_losses)
 println("Validation losses: ", val_losses)
 println("Test losses: ", test_losses)
 
+using Plots;
+# Plotly, PyPlot, PlotlyJS y GR -> los mas generales
+# backend()
+plotly()
 
-# PARTE 5
-# --------------------------------------------------------------------------
-# Entrenar distintas arquitecturas y sacar gráficas de cómo ha sido la evolución de los valores de loss de entrenamiento, validación y test en la misma gráfica, incluyendo el ciclo 0
-# (Code for training and plotting the loss values goes here)
+train_loss = plot(1:length(train_losses), train_losses, label="Train loss", title="Losses")
+val_loss = plot(1:length(val_losses), val_losses, label="Validation loss")
+test_loss = plot(1:length(test_losses), test_losses, label="Test loss")
+graph = plot()
+plot!(graph, 1:length(train_losses), train_losses, label="Train loss")
+plot!(graph, 1:length(val_losses), val_losses, label="Validation loss")
+plot!(graph, 1:length(test_losses), test_losses, label="Test loss")
+display(graph)
+#=
+
+plot(1:5, [2, 3, 1, 3, 5])
+plot(1:5, [2 1 1; 3 -1 2; 1 0 4; 3 2 -5; 5 4 3]) 
+
+g = plot(1:5, [2, 3, 1, 3, 5]) 
+plot!(g, 1:5, [1, -1, 0, 2, 4])
+
+g = plot()
+plot!(g, 1:5, [2, 3, 1, 3, 5])
+plot!(g, 1:5, [1, -1, 0, 2, 4]) 
+display(g) 
+
+plot(g, [2, 3, 1, 3, 5], xaxis = "Eje x", yaxis = "Eje y", title =
+"Grafica de prueba", marker = :square, color = :red, label = "Serie 1") 
+=#
 
 using Test
 # con esto funciona
@@ -378,32 +408,6 @@ println("Best model: ", best_model)
 println("Train losses: ", train_losses)
 println("Validation losses: ", val_losses)
 println("Test losses: ", test_losses)
-
-#=
-
-using Test
-
-# Definir una función para generar un conjunto de datos de prueba
-function generate_test_dataset(n_samples::Int, n_features::Int, n_classes::Int)
-    inputs = rand(n_samples, n_features)
-    targets = rand(Bool, n_samples)
-    return (inputs, targets)
-end
-
-# Generar algunos conjuntos de datos de prueba
-training_dataset = generate_test_dataset(100, 4, 2)
-validation_dataset = generate_test_dataset(50, 4, 2)
-test_dataset = generate_test_dataset(50, 4, 2)
-
-# Definir una topología de prueba y otras opciones
-topology = [4, 2]
-max_epochs = 10
-min_loss = 0.0
-learning_rate = 0.01
-max_epochs_val = 5
-
-best_model, train_losses, val_losses, test_losses = trainClassANN(topology, training_dataset, validationDataset=validation_dataset, testDataset=test_dataset, maxEpochs=max_epochs, minLoss=min_loss, learningRate=learning_rate, maxEpochsVal=max_epochs_val)
-println(best_model, train_losses, val_losses, test_losses)
 =#
 # PARTE 9
 # --------------------------------------------------------------------------
@@ -429,4 +433,51 @@ println()
 println("Tamaño del conjunto de entrenamiento:", length(index_train)," -> ", index_train)
 println("Tamaño del conjunto de validación:", length(index_val)," -> ", index_val)
 println("Tamaño del conjunto de test: ", length(index_test)," -> ", index_test)
+=#
+
+# PARTE 10
+# --------------------------------------------------------------------------
+
+# Define some example outputs and targets
+include("main.jl")
+#outputs = [true, true, false, false, true, true, false, false]
+#targets = [true, false, true, false, true, false, true, false]
+
+#= 4.1
+using Test
+# Test for the confusionMatrix function
+@testset "confusionMatrix" begin
+    outputs = [true, false, true, false, true]
+    targets = [true, true, false, false, true]
+    matrix_accuracy, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix = confusionMatrix(outputs, targets)
+    @test matrix_accuracy ≈ 0.6
+    @test fail_rate ≈ 0.4
+    @test sensitivity ≈ 0.6666666666666666
+    @test specificity ≈ 0.5
+    @test positive_predictive_value ≈ 0.6666666666666666
+    @test negative_predictive_value ≈ 0.5
+    @test f_score ≈ 0.3333333333333333
+    @test matrix == [1 1; 1 2]
+end;
+
+# Test for the printConfusionMatrix function
+printConfusionMatrix([true, false, true, false, true], [true, true, false, false, true])
+
+# Generate example outputs and targets
+outputs = rand(10)
+targets = rand(Bool, 10)
+
+# Test the confusionMatrix function
+matrix_accuracy, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix = confusionMatrix(outputs, targets; threshold=0.4)
+
+# Print the results
+println("Accuracy: ", matrix_accuracy)
+println("Fail rate: ", fail_rate)
+println("Sensitivity: ", sensitivity)
+println("Specificity: ", specificity)
+println("Positive predictive value: ", positive_predictive_value)
+println("Negative predictive value: ", negative_predictive_value)
+println("F-score: ", f_score)
+println("Confusion matrix:")
+printConfusionMatrix(outputs, targets)
 =#
