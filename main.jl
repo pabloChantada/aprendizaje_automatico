@@ -142,9 +142,8 @@ end;
 
 function classifyOutputs(outputs::AbstractArray{<:Real,2}; threshold::Real=0.5)
     if size(outputs, 2) == 1
-        outputs = reshape(outputs, :, 1)
         vector_outputs = classifyOutputs(outputs[:]; threshold)
-        matrix_outputs = reshape(vector_outputs, size(outputs))
+        matrix_outputs = reshape(vector_outputs, :, 1)
         return matrix_outputs
     else
         (_, indicesMaxEachInstance) = findmax(outputs, dims=2)
@@ -218,8 +217,9 @@ function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutp
 
     ann = Chain()
     numInputsLayer = numInputs
-    for numOutputsLayer = topology
-        ann = Chain(ann..., Dense(numInputsLayer, numOutputsLayer, transferFunctions[end]))
+    for i::Int = 1:length(topology)    
+        numOutputsLayer = topology[i]    
+        ann = Chain(ann..., Dense(numInputsLayer, numOutputsLayer, transferFunctions[i]))
         numInputsLayer = numOutputsLayer
     end
     # Ultima capa
@@ -437,33 +437,67 @@ end;
 
 # 4.2
 function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
-    #
-    # Codigo a desarrollar
-    #
+    # outputs = matriz de salidas
+    # targets = matriz de salidas deseadas
+    @assert size(outputs) == size(targets) "Las matrices deben tener las mismas dimensiones"
+    @assert size(outputs, 2) != 2 "Las no pueden ser de dimension 2 (caso bineario)" 
+    if size(outputs, 2) == 1
+        confusionMatrix(outputs[:], targets[:])
+    else
+        sensitivity = zeros(size(outputs, 2))
+        specificity = zeros(size(outputs, 2))
+        positive_predictive_value = zeros(size(outputs, 2))
+        negative_predictive_value = zeros(size(outputs, 2))
+        f_score = zeros(size(outputs, 2))
+        matrix = []
+
+        for i = eachindex(size(outputs, 2))
+            _, _, sensitivity[i], specificity[i], positive_predictive_value[i], negative_predictive_value[i], f_score[i], _ = confusionMatrix(outputs[:,i], targets[:,i])
+        end
+        # doble bucle ???¿?¿?¿?
+        for i = eachindex(size(outputs, 2))
+            matrix[i,:] = [sensitivity[i], specificity[i], positive_predictive_value[i], negative_predictive_value[i], f_score[i]]    
+        end
+        acc = accuracy(outputs, targets)
+        fail_rate = 1 - acc
+
+        @assert(all([in(output, unique(targets)) for output in outputs])) 
+        return acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix
+    end;
 end;
 
 function confusionMatrix(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
     #
-    # Codigo a desarrollar
+    new_outputs = classifyOutputs(outputs)
+    confusionMatrix(new_outputs, targets; weighted=weighted)
     #
 end;
 
 function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray{<:Any,1}; weighted::Bool=true)
     #
-    # Codigo a desarrollar
+    # Codigo a desarrollar mirar bien
     #
 end;
 
 function printConfusionMatrix(outputs::AbstractArray{Bool,2},
     targets::AbstractArray{Bool,2}; weighted::Bool=true)
+    matrix = confusionMatrix(outputs, targets; threshold=threshold)[8]
+    println("Matriz de confusión: \n")
+    println(matrix)
 end;
 
 function printConfusionMatrix(outputs::AbstractArray{<:Real,2},
     targets::AbstractArray{Bool,2}; weighted::Bool=true)
+    matrix = confusionMatrix(outputs, targets; threshold=threshold)[8]
+    println("Matriz de confusión: \n")
+    println(matrix)
 end;
 
 function printConfusionMatrix(outputs::AbstractArray{<:Any,1},
     targets::AbstractArray{<:Any,1}; weighted::Bool=true)
+    matrix = confusionMatrix(outputs, targets; threshold=threshold)[8]
+    println("Matriz de confusión: \n")
+    println(matrix)
 end;
 
 # PARTE 11

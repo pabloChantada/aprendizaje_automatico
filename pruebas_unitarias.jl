@@ -112,13 +112,15 @@ println("Incompleta con copy: ",new_normalize_values[1:15])
 
 # PARTE 5
 # --------------------------------------------------------------------------
-#=
+
 include("main.jl")
 
 # Caso 1: Una matriz con una sola columna
 outputs1 = [0.2; 0.7; 0.4]
 expected_output1 = [false; true; false]
 result1 = classifyOutputs(outputs1)
+size(outputs1)
+matrix_outputs = reshape(result1, :,1)
 @assert result1 == expected_output1
 
 # Caso 2: Una matriz con múltiples columnas
@@ -143,7 +145,7 @@ for i in 1:rows
 end
 classified = classifyOutputs(random_matrix)
 println(classified)
-=#
+
 # PARTE 6
 # --------------------------------------------------------------------------
 #= uncoment to use
@@ -268,7 +270,14 @@ test_accuracy_real_matrices_custom_threshold()
 # PARTE 7
 # --------------------------------------------------------------------------
 # topology = [numero capas ocultas, numero de neuronas, (opcional) funciones de transferencia]
-#= uncoment to use
+#=include("main.jl")
+numInputs1 = 3
+topology1 = [4, 7, 3]
+numOutputs1 = 3
+ann1 = buildClassANN(numInputs1, topology1, numOutputs1)
+# Verifica que la red neuronal tenga la estructura esperada
+println(ann1)
+
 function test_buildClassANN()
     # Caso 1: Red neuronal con una capa oculta
     numInputs1 = 3
@@ -302,7 +311,6 @@ test_buildClassANN()
 
 # PARTE 1
 # --------------------------------------------------------------------------
-#= uncoment to use
 
 include("main.jl")
 # Cargar la base de datos, teniendo los patrones en filas y atributos y salidas deseadas en columnas.
@@ -356,7 +364,7 @@ println("Best model: ", best_model)
 println("Train losses: ", train_losses)
 println("Validation losses: ", val_losses)
 println("Test losses: ", test_losses)
-
+#=
 using Plots;
 # Plotly, PyPlot, PlotlyJS y GR -> los mas generales
 # backend()
@@ -480,4 +488,12 @@ println("Negative predictive value: ", negative_predictive_value)
 println("F-score: ", f_score)
 println("Confusion matrix:")
 printConfusionMatrix(outputs, targets)
+=#
+
+#= 4.2
+include("main.jl")
+
+outputs = rand(Bool, 2, 5)
+targets = rand(Bool, 2, 5)
+confusionMatrix(inputs_train, targets_train)
 =#
