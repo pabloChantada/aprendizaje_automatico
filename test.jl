@@ -54,3 +54,5 @@ acc = accuracy(outputs, targets)
 fail_rate = 1 - acc
 @assert (all([in(output, unique(targets)) for output in outputs])) "Error: Los valores de salida no están en el conjunto de valores posibles de salida."
 return acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix
+
+include("main.jl")

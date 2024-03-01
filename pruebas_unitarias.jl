@@ -497,3 +497,12 @@ outputs = rand(Bool, 2, 5)
 targets = rand(Bool, 2, 5)
 confusionMatrix(inputs_train, targets_train)
 =#
+
+# PARTE 11
+# --------------------------------------------------------------------------
+include("main.jl")
+n = 20
+k = 5
+x = (crossvalidation(n,k))
+println(x)
+@assert length(x) == n

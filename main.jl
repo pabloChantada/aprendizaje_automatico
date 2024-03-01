@@ -470,6 +470,7 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
         fail_rate = 1 - acc
         @assert (all([in(output, unique(targets)) for output in outputs])) "Error: Los valores de salida no están en el conjunto de valores posibles de salida."
         return acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix
+    end
 end;
 
 function confusionMatrix(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
@@ -518,26 +519,66 @@ end;
 # --------------------------------------------------------------------------
 
 function crossvalidation(N::Int64, k::Int64)
-    #
-    # Codigo a desarrollar
+    # N -> numero de patrones
+    # k -> numero de particiones
+    @assert k => 1 "Numero de particiones incorrecto"
+    # Numero de elementos en cada particion
+    k_vector = [1:k;]
+    # Repetimos el vector k_vector hasta que sea mayor que N
+    kn_vector = repeat(k_vector, ceil(Int, N / k))
+    # Tomamos los primeros N elementos
+    x = kn_vector[1:N]
+    # Permutamos el vector
+    shuffle!(x)
+    @assert length(x) == N "Error en la particion"
+    return x
     #
 end;
 
 function crossvalidation(targets::AbstractArray{Bool,1}, k::Int64)
     #
-    # Codigo a desarrollar
+    @assert k => 10 "Numero de particiones debe ser mayor o igual que 10"
+    index_vector = collect(1:length(targets))
+    # Creamos un vector con el numero de particion a la que pertenece cada patron
+    positive = crossvalidation(count(targets .== 1), k)
+    negative = crossvalidation(count(targets .== 0), k)
+    # Asignamos a cada patron su particion
+    index_vector[findall(targets .== 1)] .= positive; index_vector[findall(targets .== 0)] .= negative
+    @assert length(index_vector) == length(targets) "Error en la particion"
+    return index_vector
     #
 end;
 
 function crossvalidation(targets::AbstractArray{Bool,2}, k::Int64)
     #
-    # Codigo a desarrollar
+    @assert k => 10 "Numero de particiones debe ser mayor o igual que 10"
+    index_vector = size(targets, 1)
+    for i = 1:(size(targets, 2))
+        elements = sum(targets[:,i])
+        col_positions = crossvalidation(elements, k)
+        index_vector[findall(targets[:,i] .== 1), i] .= col_positions
+    end
+    @assert length(index_vector) == size(targets, 1) "Error en la particion"
+    return index_vector
     #
 end;
 
 function crossvalidation(targets::AbstractArray{<:Any,1}, k::Int64)
-    #
-    # Codigo a desarrollar
+    # Cualquier tipo de dato
+    @assert k => 10 "Numero de particiones debe ser mayor o igual que 10"
+    if length(unique(targets)) >= 2
+        return crossvalidation(oneHotEncoding(targets), k)
+    else
+        index_vector = collect(1:length(targets))
+        unique_targets = unique(targets)
+        for i = 1:(length(unique_targets))
+            elements = sum(targets .== unique_targets[i])
+            col_positions = crossvalidation(elements, k)
+            index_vector[findall(targets .== unique_targets[i])] .= col_positions
+        end
+        @assert length(index_vector) == length(targets) "Error en la particion"
+        return index_vector
+    end
     #
 end;
 
