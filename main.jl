@@ -164,22 +164,15 @@ function accuracy(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1}
 end;
 
 function accuracy(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2})
-    #Las matrices targets y outputs deben tener las mismas dimensiones.
     @assert size(targets) == size(outputs)
-    # Si ambas matrices tienen una sola columna:
     if size(targets, 2) == 1 && size(outputs, 2) == 1
-        #Llama a la función accuracy creada enteriormente.
-        return accuracy(vec(targets), vec(outputs))
-        # Si ambas matrices tienen más de una columna
+        return accuracy(vec(outputs), vec(targets))
     else
-        #calcula la cantidad de diferencias entre las dos matrices, fila por fila.
         mismatches = sum(targets .!= outputs, dims=2)
-        #Cuenta el número de filas con al menos una diferencia, y lo divide entre 
-        #el número total de filas, valor el cual se resta de 1 para obtener la precisión.
-        # print(1.0 - count(mismatches .> 0) / size(targets, 1)) -> 0
-        return 1.0 - (sum(mismatches) / (size(targets)[1] * size(targets)[2]))
+        return 1.0 - (sum(mismatches .> 0) / size(targets, 1))
     end
-end;
+end
+
 
 function accuracy(outputs::AbstractArray{<:Real,1}, targets::AbstractArray{Bool,1}; threshold::Real=0.5)
     #Los vectores targets y outputs deben tener la misma longitud.
@@ -188,7 +181,7 @@ function accuracy(outputs::AbstractArray{<:Real,1}, targets::AbstractArray{Bool,
     #cuyos elementos indican si el valor es mayor o igual al umbral.
     outputs_bool = outputs .>= threshold
     #Llamamos a la función creada antes y esta se encargará de comparar los vectores booleanos targets y outputs_bool y calcular la precisión del modelo.
-    return accuracy(targets, outputs_bool)
+    return accuracy(outputs_bool, targets)
 end;
 
 function accuracy(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; threshold::Real=0.5)
