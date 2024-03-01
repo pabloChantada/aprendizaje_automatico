@@ -383,7 +383,7 @@ end
 
 # PARTE 10
 # --------------------------------------------------------------------------
-# 4.1 - Devuelve matriz y  metrica
+# 4.1
 function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1})
     # Matrices cuadradadas = clases x clases
     # Muestra la distribucion de los patrones y la clasificacion que hace el modelo
@@ -404,7 +404,7 @@ function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{
     specificity = vn / (vn + fp) * (vn + fp > 0 ? 1 : 0)
     positive_predictive_value = vp / (vp + fp) * (vp + fp > 0 ? 1 : 0)
     negative_predictive_value = vn / (vn + fn) * (vn + fn > 0 ? 1 : 0)
-    f_score = (positive_predictive_value * sensitivity) / (positive_predictive_value + sensitivity) * (positive_predictive_value + sensitivity > 0 ? 1 : 0)
+    f_score = 2 * (positive_predictive_value * sensitivity) / (positive_predictive_value + sensitivity) * (positive_predictive_value * sensitivity > 0 ? 1 : 0)
     return matrix_accuracy, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix 
 end;
 
@@ -435,35 +435,48 @@ function printConfusionMatrix(outputs::AbstractArray{<:Real,1},
     #
 end;
 
-# 4.2
+
+# 4.2 - La primera esta mal 100 % xddddd
 function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
     # outputs = matriz de salidas
     # targets = matriz de salidas deseadas
     @assert size(outputs) == size(targets) "Las matrices deben tener las mismas dimensiones"
-    @assert size(outputs, 2) != 2 "Las no pueden ser de dimension 2 (caso bineario)" 
+    @assert size(outputs, 2) != 2 "Las no pueden ser de dimension 2 (caso binario)" 
     if size(outputs, 2) == 1
-        confusionMatrix(outputs[:], targets[:])
-    else
+        acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix = confusionMatrix(outputs, targets)
+        @assert (all([in(output, unique(targets)) for output in outputs])) "Las salidas no estan en las clases deseadas"
+        return acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix
+    else 
         sensitivity = zeros(size(outputs, 2))
         specificity = zeros(size(outputs, 2))
         positive_predictive_value = zeros(size(outputs, 2))
         negative_predictive_value = zeros(size(outputs, 2))
         f_score = zeros(size(outputs, 2))
-        matrix = []
-
-        for i = eachindex(size(outputs, 2))
+        
+        for i = 1:(size(outputs, 2))
+            #matrix_accuracy, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix
             _, _, sensitivity[i], specificity[i], positive_predictive_value[i], negative_predictive_value[i], f_score[i], _ = confusionMatrix(outputs[:,i], targets[:,i])
+        end       
+        # esto esta mal
+        matrix = zeros(size(outputs, 1), size(outputs, 2))
+        for i = 1:(size(outputs, 2))
+            for j = 1:(size(outputs, 2))
+                if i == j
+                    matrix[i, j] = positive_predictive_value[i]
+                end
+            end
         end
-        # doble bucle ???¿?¿?¿?
-        for i = eachindex(size(outputs, 2))
-            matrix[i,:] = [sensitivity[i], specificity[i], positive_predictive_value[i], negative_predictive_value[i], f_score[i]]    
+        # esto no se como hacerlo
+        if weighted == true
+            combined = sum(data .* size(outputs, 2)) / sum(size(outputs, 2))
+            println(combined)
+        else
+            combined = mean(data)
         end
         acc = accuracy(outputs, targets)
         fail_rate = 1 - acc
-
-        @assert(all([in(output, unique(targets)) for output in outputs])) 
+        @assert (all([in(output, unique(targets)) for output in outputs])) "Error: Los valores de salida no están en el conjunto de valores posibles de salida."
         return acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix
-    end;
 end;
 
 function confusionMatrix(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
@@ -475,27 +488,35 @@ end;
 
 function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray{<:Any,1}; weighted::Bool=true)
     #
-    # Codigo a desarrollar mirar bien
+    @assert length(unique(outputs)) == length(unique(targets)) "Las matrices deben tener las mismas dimensiones"
+    classes_outputs = unique(outputs)
+    classes_targets = unique(targets)
+
+    new_outputs = oneHotEncoding(outputs, classes_outputs)
+    new_targets = oneHotEncoding(targets, classes_targets)
+    acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix = \
+    confusionMatrix(new_outputs, new_targets; weighted=weighted)
+    return acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix
     #
 end;
 
 function printConfusionMatrix(outputs::AbstractArray{Bool,2},
     targets::AbstractArray{Bool,2}; weighted::Bool=true)
-    matrix = confusionMatrix(outputs, targets; threshold=threshold)[8]
+    matrix = confusionMatrix(outputs, targets; weighted=weighted)
     println("Matriz de confusión: \n")
     println(matrix)
 end;
 
 function printConfusionMatrix(outputs::AbstractArray{<:Real,2},
     targets::AbstractArray{Bool,2}; weighted::Bool=true)
-    matrix = confusionMatrix(outputs, targets; threshold=threshold)[8]
+    matrix = confusionMatrix(outputs, targets; weighted=weighted)
     println("Matriz de confusión: \n")
     println(matrix)
 end;
 
 function printConfusionMatrix(outputs::AbstractArray{<:Any,1},
     targets::AbstractArray{<:Any,1}; weighted::Bool=true)
-    matrix = confusionMatrix(outputs, targets; threshold=threshold)[8]
+    matrix = confusionMatrix(outputs, targets; weighted=weighted)
     println("Matriz de confusión: \n")
     println(matrix)
 end;
@@ -541,4 +562,7 @@ end;
 
 # PARTE 12
 # --------------------------------------------------------------------------
-# modelCrossValidation
+function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
+    inputs::AbstractArray{<:Real,2}, targets::AbstractArray{<:Any,1},
+    crossValidationIndices::Array{Int64,1}) 
+end;
