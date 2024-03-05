@@ -25,9 +25,8 @@ normalizeZeroMean:
 classifyOutputs:
    Nota: 0.25
 
-# arreglado
-accuracy:
-   Salidas incorrectas al hacer el calculo con parametros (AbstractArray{<:Real,2}, AbstractArray{Bool,2}; threshold::Real=0.5) al usar una matriz de valores reales como salidas y una matriz de valores booleanos como salidas deseadas, ambas de una columna, con un umbral distinto
+__accuracy:
+   Salidas incorrectas al hacer el calculo con parametros (AbstractArray{<:Real,2}, AbstractArray{Bool,2}; threshold::Real=0.5) al usar una matriz de valores reales como salidas y una matriz de valores booleanos como salidas deseadas, ambas de una columna, con un umbral distinto__
 
 buildClassANN:
    Nota: 0.25
@@ -39,14 +38,12 @@ Ejercicio 3
 holdOut:
    Nota: 0.1
 
-# claudia
-__trainClassANN:__
-   __Error al ejecutar la función con 2 clases: StackOverflowError:__
+trainClassANN:
+   Error al ejecutar la función con 2 clases: StackOverflowError:
 
 -------------------------------------------------------------------------------------------------------------------------
 Ejercicio 4
 
-# pablo
 confusionMatrix:
    Salida incorrecta al ejecutar la funcion con un vector de valores booleanos (2 clases): sensibilidad incorrecta
    Salida incorrecta al ejecutar la funcion con un vector de valores booleanos (2 clases): especificidad incorrecta
@@ -114,20 +111,19 @@ iterate(!Matched::T) where T<:Union{Base.KeySet{<:Any, <:Dict}, Base.ValueIterat
 
 -------------------------------------------------------------------------------------------------------------------------
 Ejercicio 5
-# pablo
-__crossvalidation:__
-   __Error al ejecutar la funcion con una sola columna: TypeError: non-boolean (Pair{Int64, Int64}) used in boolean context__
-   __Error al ejecutar la funcion con una sola columna: TypeError: non-boolean (Pair{Int64, Int64}) used in boolean context__
-   __Indices con clases no equitativamente distribuidas en los grupos al ejecutar con parametros (AbstractArray{Bool,1},Int64)__
-   __Error al ejecutar la funcion con una sola columna: TypeError: non-boolean (Pair{Int64, Int64}) used in boolean context__
-   __Indices con clases no equitativamente distribuidas en los grupos al ejecutar con parametros (AbstractArray{Bool,2},Int64)__
-   __Error al ejecutar la funcion con una sola columna: TypeError: non-boolean (Pair{Int64, Int64}) used in boolean context__
-   __Indices con clases no equitativamente distribuidas en los grupos al ejecutar con parametros (AbstractArray{<:Any,1},Int64)__
 
-# claudia
-__ANNCrossValidation:__
-   __Resultados incorrectos: no devuelve una tupla de 7 valores donde cada uno es una tupla de 2 valores al entrenar la RNA__ 
-   __Resultados incorrectos: no devuelve una tupla de 7 valores donde cada uno es una tupla de 2 valores al entrenar la RNA__ 
+crossvalidation:
+   Error al ejecutar la funcion con una sola columna: TypeError: non-boolean (Pair{Int64, Int64}) used in boolean context
+   Error al ejecutar la funcion con una sola columna: TypeError: non-boolean (Pair{Int64, Int64}) used in boolean context
+   Indices con clases no equitativamente distribuidas en los grupos al ejecutar con parametros (AbstractArray{Bool,1},Int64)
+   Error al ejecutar la funcion con una sola columna: TypeError: non-boolean (Pair{Int64, Int64}) used in boolean context
+   Indices con clases no equitativamente distribuidas en los grupos al ejecutar con parametros (AbstractArray{Bool,2},Int64)
+   Error al ejecutar la funcion con una sola columna: TypeError: non-boolean (Pair{Int64, Int64}) used in boolean context
+   Indices con clases no equitativamente distribuidas en los grupos al ejecutar con parametros (AbstractArray{<:Any,1},Int64)
+
+ANNCrossValidation:
+   Resultados incorrectos: no devuelve una tupla de 7 valores donde cada uno es una tupla de 2 valores al entrenar la RNA 
+   Resultados incorrectos: no devuelve una tupla de 7 valores donde cada uno es una tupla de 2 valores al entrenar la RNA 
 
 
 -------------------------------------------------------------------------------------------------------------------------

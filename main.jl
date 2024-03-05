@@ -131,7 +131,7 @@ function normalizeZeroMean(dataset::AbstractArray{<:Real,2})
 end;
 
 
-# PARTE 5 - Preguntar
+# PARTE 5
 # --------------------------------------------------------------------------
 
 function classifyOutputs(outputs::AbstractArray{<:Real,1}; threshold::Real=0.5)
@@ -155,7 +155,7 @@ end
 
 # PARTE 6
 # --------------------------------------------------------------------------
-
+# correguida
 function accuracy(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1})
     #Las matrices targets y outputs deben tener la misma longitud.
     @assert length(targets) == length(outputs)
@@ -163,25 +163,29 @@ function accuracy(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1}
     return sum(targets .== outputs) / length(targets)
 end;
 
+# correguida
 function accuracy(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2})
     @assert size(targets) == size(outputs)
-    if size(targets, 2) == 1 && size(outputs, 2) == 1
-        return accuracy(vec(outputs), vec(targets))
+    if size(outputs, 2) == 1
+        return accuracy(outputs[:, 1], targets[:, 1]);
     else
         mismatches = sum(targets .!= outputs, dims=2)
-        return 1.0 - (sum(mismatches .> 0) / size(targets, 1))
+        total_samples = size(targets, 1) * size(targets, 2)
+        if any(mismatches .> 0)
+            accuracy_value = 1.0 - (sum(mismatches) / total_samples)
+        else
+            accuracy_value = 1.0
+        end
+        return accuracy_value
     end
 end
 
-
+# correguida
 function accuracy(outputs::AbstractArray{<:Real,1}, targets::AbstractArray{Bool,1}; threshold::Real=0.5)
     #Los vectores targets y outputs deben tener la misma longitud.
     @assert length(targets) == length(outputs)
-    #compara cada elemento del vector outputs con el umbral especificado y devuelve un vector
-    #cuyos elementos indican si el valor es mayor o igual al umbral.
-    outputs_bool = outputs .>= threshold
-    #Llamamos a la función creada antes y esta se encargará de comparar los vectores booleanos targets y outputs_bool y calcular la precisión del modelo.
-    return accuracy(outputs_bool, targets)
+    new_outputs = classifyOutputs(outputs; threshold)
+    return accuracy(new_outputs, targets)
 end;
 
 function accuracy(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; threshold::Real=0.5)
@@ -190,12 +194,10 @@ function accuracy(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,
     #Comprueba si la matriz outputs tiene una sola columna.
     if size(outputs, 2) == 1
         # outputs tiene una sola columna, llamamos a la función accuracy creada anteriormente.
-        return accuracy(outputs[:, 1], targets[:, 1])
+        return accuracy(outputs[:, 1], targets[:, 1]; threshold=threshold)
     else
-        #Llamamos a la función classifyOutputs que convierte la matriz de valores reales outputs 
-        #en una matriz de valores booleanos.
         outputs_bool = classifyOutputs(outputs; threshold)
-        #Llamamos a la función creada antes y esta se encargará de comparar los vectores booleanos targets y outputs_bool y calcular la precisión del modelo.
+        accuracy(outputs_bool, targets)
         return accuracy(outputs_bool, targets)
     end
 end;
@@ -429,7 +431,7 @@ function printConfusionMatrix(outputs::AbstractArray{<:Real,1},
 end;
 
 
-# 4.2 - La primera esta mal 100 % xddddd
+# 4.2 - todo mal
 function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
     # outputs = matriz de salidas
     # targets = matriz de salidas deseadas
@@ -515,7 +517,7 @@ function printConfusionMatrix(outputs::AbstractArray{<:Any,1},
     println(matrix)
 end;
 
-# PARTE 11
+# PARTE 11 - Todo mal
 # --------------------------------------------------------------------------
 
 function crossvalidation(N::Int64, k::Int64)
