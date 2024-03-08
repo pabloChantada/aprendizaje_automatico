@@ -523,7 +523,7 @@ end;
 function crossvalidation(N::Int64, k::Int64)
     # N -> numero de patrones
     # k -> numero de particiones
-    @assert k => 1 "Numero de particiones incorrecto"
+    @assert k >= 1 "Numero de particiones incorrecto"
     # Numero de elementos en cada particion
     k_vector = [1:k;]
     # Repetimos el vector k_vector hasta que sea mayor que N
@@ -539,13 +539,14 @@ end;
 
 function crossvalidation(targets::AbstractArray{Bool,1}, k::Int64)
     #
-    @assert k => 10 "Numero de particiones debe ser mayor o igual que 10"
+    @assert k >= 10 "Numero de particiones debe ser mayor o igual que 10"
     index_vector = collect(1:length(targets))
     # Creamos un vector con el numero de particion a la que pertenece cada patron
-    positive = crossvalidation(count(targets .== 1), k)
-    negative = crossvalidation(count(targets .== 0), k)
+    positive = crossvalidation(count(targets .== true ), k)
+    negative = crossvalidation(count(targets .== false ), k)
     # Asignamos a cada patron su particion
-    index_vector[findall(targets .== 1)] .= positive; index_vector[findall(targets .== 0)] .= negative
+    index_vector[findall(targets .== true)] .= positive
+    index_vector[findall(targets .== false)] .= negative
     @assert length(index_vector) == length(targets) "Error en la particion"
     return index_vector
     #
@@ -553,12 +554,12 @@ end;
 
 function crossvalidation(targets::AbstractArray{Bool,2}, k::Int64)
     #
-    @assert k => 10 "Numero de particiones debe ser mayor o igual que 10"
-    index_vector = size(targets, 1)
+    @assert k >= 10 "Numero de particiones debe ser mayor o igual que 10"
+    index_vector = Array{Int64}(undef, size(targets, 1))
     for i = 1:(size(targets, 2))
-        elements = sum(targets[:,i])
+        elements = sum(targets[:, i])
         col_positions = crossvalidation(elements, k)
-        index_vector[findall(targets[:,i] .== 1), i] .= col_positions
+        index_vector[findall(targets[:, i] .== true), i] .= col_positions
     end
     @assert length(index_vector) == size(targets, 1) "Error en la particion"
     return index_vector
@@ -567,12 +568,13 @@ end;
 
 function crossvalidation(targets::AbstractArray{<:Any,1}, k::Int64)
     # Cualquier tipo de dato
-    @assert k => 10 "Numero de particiones debe ser mayor o igual que 10"
+    @assert k >= 10 "Numero de particiones debe ser mayor o igual que 10"
+    unique_targets = unique(targets)
     if length(unique(targets)) >= 2
-        return crossvalidation(oneHotEncoding(targets), k)
+        index_vector = crossvalidation(oneHotEncoding(targets), k)
+        return index_vector
     else
         index_vector = collect(1:length(targets))
-        unique_targets = unique(targets)
         for i = 1:(length(unique_targets))
             elements = sum(targets .== unique_targets[i])
             col_positions = crossvalidation(elements, k)
@@ -591,10 +593,98 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
     transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)),
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.01,
     validationRatio::Real=0, maxEpochsVal::Int=20)
-    #
-    # Codigo a desarrollar
-    #
-end; 
+    
+    # Calcular el número de folds
+    numFolds = maximum(crossValidationIndices)
+
+    # Variables para almacenar las métricas
+    precision = Float64[]
+    errorRate = Float64[]
+    sensitivity = Float64[]
+    specificity = Float64[]
+    VPP = Float64[]
+    VPN = Float64[]
+    F1 = Float64[]
+
+    # One-hot-encoding del vector de salidas deseadas
+    targets_onehot = oneHotEncoding(targets)
+
+    # Realizar la validación cruzada
+    for fold in 1:numFolds
+        
+        # Separar los datos de entrenamiento y test
+        train_indices = filter(x -> x != fold, crossValidationIndices)
+        test_indices = findall(x -> x == fold, crossValidationIndices)
+
+        train_inputs = inputs[:, train_indices]
+        train_targets = targets_onehot[:, train_indices]
+        test_inputs = inputs[:, test_indices]
+        test_targets = targets_onehot[test_indices]
+
+        # Crear y entrenar la red neuronal en este fold
+        ann = buildClassANN(size(train_inputs, 2), topology, size(train_targets, 1),
+                            transferFunctions=transferFunctions)
+
+
+        # Bucle para repetir el entrenamiento dentro del fold
+        for _ in 1:numExecutions
+
+            # Entrenar la red neuronal
+            ann_trained = trainClassANN(ann, (train_inputs, train_targets),
+                validationDataset=(validation_inputs, validation_targets),
+                transferFunctions=transferFunctions,
+                maxEpochs=maxEpochs, minLoss=minLoss,
+                learningRate=learningRate,
+                maxEpochsVal=maxEpochsVal)
+
+            # Evaluar la red neuronal con el conjunto de prueba
+            confusion_matrix = confusionMatrix(predict(ann_trained, test_inputs), test_targets)
+
+        
+            # Coger las  métricas y almacenarlas en los vectores correspondientes
+            acc = confusion_matrix[1]
+            fail_rate = confusion_matrix[2]
+            sensitivity_values = confusion_matrix[3]
+            specificity_values = confusion_matrix[4]
+            positive_predictive_value = confusion_matrix[5]
+            negative_predictive_value = confusion_matrix[6]
+            f_score = confusion_matrix[7]
+
+            push!(acc, precision)
+            push!(fail_rate, error_rate)
+            push!(sensitivity_values, sensitivity)
+            push!(specificity_values, specificity)
+            push!(positive_predictive_value, vpp)
+            push!(negative_predictive_value, vpn)
+            push!(f_score, f1)
+        end
+    end
+
+    # Calcular medias y desviaciones estándar de las métricas de todos los folds
+    precision_mean = mean(precision)
+    precision_std = std(precision)
+    errorRate_mean = mean(errorRate)
+    errorRate_std = std(errorRate)
+    sensitivity_mean = mean(sensitivity)
+    sensitivity_std = std(sensitivity)
+    specificity_mean = mean(specificity)
+    specificity_std = std(specificity)
+    VPP_mean = mean(VPP)
+    VPP_std = std(VPP)
+    VPN_mean = mean(VPN)
+    VPN_std = std(VPN)
+    F1_mean = mean(F1)
+    F1_std = std(F1)
+
+    return ((precision_mean, precision_std), 
+            (errorRate_mean, errorRate_std), 
+            (sensitivity_mean, sensitivity_std), 
+            (specificity_mean, specificity_std), 
+            (VPP_mean, VPP_std), 
+            (VPN_mean, VPN_std), 
+            (F1_mean, F1_std))
+end;
+    
 
 # PARTE 12
 # --------------------------------------------------------------------------
