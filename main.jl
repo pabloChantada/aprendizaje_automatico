@@ -388,20 +388,19 @@ function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{
     [VN FP;
      FN VP]
     =#
-    matrix = [sum((outputs .== 0) .& (targets .== 0)) sum((outputs .== 0) .& (targets .== 1));
-              sum((outputs .== 1) .& (targets .== 0)) sum((outputs .== 1) .& (targets .== 1))] 
+    matrix = [sum((outputs .== false) .& (targets .== false)) sum((outputs .== false) .& (targets .== true));
+              sum((outputs .== true) .& (targets .== false)) sum((outputs .== true) .& (targets .== true))] 
     vn, fp, fn, vp = matrix[1,1], matrix[1,2], matrix[2,1], matrix[2,2]
     matrix_accuracy = (vn + vp) / (vn + vp + fn + fp)
     fail_rate = (fn + fp) / (vn + vp + fn + fp)
 
-    # fn + vp > 0 ? 1 : 0 ->if fn + vp > 0; true = 1, false = 0 * ecuacion
-    sensitivity = vp / (fn + vp) * (fn + vp > 0 ? 1 : 0)
-    specificity = vn / (vn + fp) * (vn + fp > 0 ? 1 : 0)
-    positive_predictive_value = vp / (vp + fp) * (vp + fp > 0 ? 1 : 0)
-    negative_predictive_value = vn / (vn + fn) * (vn + fn > 0 ? 1 : 0)
-    f_score = 2 * (positive_predictive_value * sensitivity) / (positive_predictive_value + sensitivity) * (positive_predictive_value * sensitivity > 0 ? 1 : 0)
+    sensitivity = vp / (fn + vp)
+    specificity = vn / (vn + fp)
+    positive_predictive_value = vp / (vp + fp)
+    negative_predictive_value = vn / (vn + fn)
+    f_score = 2 * (positive_predictive_value * sensitivity) / (positive_predictive_value + sensitivity)
     return matrix_accuracy, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix 
-end;
+end
 
 function confusionMatrix(outputs::AbstractArray{<:Real,1}, targets::AbstractArray{Bool,1}; threshold::Real=0.5)
     #
@@ -453,27 +452,31 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
             _, _, sensitivity[i], specificity[i], positive_predictive_value[i], negative_predictive_value[i], f_score[i], _ = confusionMatrix(outputs[:,i], targets[:,i])
         end       
         # esto esta mal
-        matrix = zeros(size(outputs, 1), size(outputs, 2))
-        for i = 1:(size(outputs, 2))
-            for j = 1:(size(outputs, 2))
-                if i == j
-                    matrix[i, j] = positive_predictive_value[i]
-                end
-            end
-        end
-        # esto no se como hacerlo
-        if weighted == true
-            combined = sum(data .* size(outputs, 2)) / sum(size(outputs, 2))
-            println(combined)
+        matrix = [i == j ? positive_predictive_value[i] : 0 for i in 1:size(outputs, 2), j in 1:size(outputs, 2)]
+
+        if weighted
+            acc = accuracy(outputs, targets)
+            fail_rate = 1 - acc
+            weighted_sensitivity = sum(sensitivity .* size(outputs, 2)) / length(sensitivity)
+            weighted_specificity = sum(specificity.* size(outputs, 2)) / length(specificity)
+            weighted_positive_predictive_value = sum(positive_predictive_value.* size(outputs, 2)) / length(positive_predictive_value)
+            weighted_negative_predictive_value = sum(negative_predictive_value.* size(outputs, 2)) / length(negative_predictive_value)
+            weighted_f_score = sum(f_score.* size(outputs, 2)) / length(f_score)
+            @assert (all([in(output, unique(targets)) for output in outputs])) "Error: Los valores de salida no están en el conjunto de valores posibles de salida."
+            return acc, fail_rate, weighted_sensitivity, weighted_specificity, weighted_positive_predictive_value, weighted_negative_predictive_value, weighted_f_score
         else
-            combined = mean(data)
+            acc = accuracy(outputs, targets)
+            fail_rate = 1 - acc
+            macro_sensitivity = mean(sensitivity)
+            macro_specificity = mean(specificity)
+            macro_positive_predictive_value = mean(positive_predictive_value)
+            macro_negative_predictive_value = mean(negative_predictive_value)
+            macro_f_score = mean(f_score)
+            @assert (all([in(output, unique(targets)) for output in outputs])) "Error: Los valores de salida no están en el conjunto de valores posibles de salida."
+            return acc, fail_rate, macro_sensitivity, macro_specificity, macro_positive_predictive_value, macro_negative_predictive_value, macro_f_score
         end
-        acc = accuracy(outputs, targets)
-        fail_rate = 1 - acc
-        @assert (all([in(output, unique(targets)) for output in outputs])) "Error: Los valores de salida no están en el conjunto de valores posibles de salida."
-        return acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix
     end
-end;
+end
 
 function confusionMatrix(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
     #
@@ -482,16 +485,17 @@ function confusionMatrix(outputs::AbstractArray{<:Real,2}, targets::AbstractArra
     #
 end;
 
+# fallo aqui
 function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray{<:Any,1}; weighted::Bool=true)
     #
     @assert length(unique(outputs)) == length(unique(targets)) "Las matrices deben tener las mismas dimensiones"
+
     classes_outputs = unique(outputs)
     classes_targets = unique(targets)
 
     new_outputs = oneHotEncoding(outputs, classes_outputs)
     new_targets = oneHotEncoding(targets, classes_targets)
-    acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix = \
-    confusionMatrix(new_outputs, new_targets; weighted=weighted)
+    acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix = confusionMatrix(new_outputs, new_targets; weighted=weighted)
     return acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix
     #
 end;

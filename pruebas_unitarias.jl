@@ -464,7 +464,7 @@ using Test
     @test specificity ≈ 0.5
     @test positive_predictive_value ≈ 0.6666666666666666
     @test negative_predictive_value ≈ 0.5
-    @test f_score ≈ 0.3333333333333333
+    @test f_score ≈ 0.6666666666666666
     @test matrix == [1 1; 1 2]
 end;
 
@@ -489,15 +489,25 @@ println("F-score: ", f_score)
 println("Confusion matrix:")
 printConfusionMatrix(outputs, targets)
 =#
-
 #= 4.2
+
+# con valores pequeños no funciona por algun motivo ?¿¿ pero con grande si
+
 include("main.jl")
 
-outputs = rand(Bool, 2, 5)
-targets = rand(Bool, 2, 5)
-confusionMatrix(inputs_train, targets_train)
+outputs = rand(Bool, 3, 3)
+targets = rand(Bool, 3, 3)
+matrix_accuracy, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score = confusionMatrix(outputs, targets, weighted = false)
+println("Accuracy: ", matrix_accuracy)
+println("Fail rate: ", fail_rate)
+println("Sensitivity: ", sensitivity)
+println("Specificity: ", specificity)
+println("Positive predictive value: ", positive_predictive_value)
+println("Negative predictive value: ", negative_predictive_value)
+println("F-score: ", f_score)
+println("Confusion matrix:")
+printConfusionMatrix(outputs, targets)
 =#
-
 # PARTE 11
 # --------------------------------------------------------------------------
 include("main.jl")
