@@ -328,14 +328,14 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     # Convertimos las salidas deseadas a vectores si es necesario
     # dataset = (inputs, reshape(dataset[2], (length(dataset[2]), 1)))
     # Convertimos las salidas deseadas a vectores si es necesario
-    if size(trainingDataset[2], 2) > 1
-        trainingDataset = (trainingDataset[1], reshape(trainingDataset[2], :, 1))
-        validationDataset = (validationDataset[1], reshape(validationDataset[2], :, 1))
-        testDataset = (testDataset[1], reshape(testDataset[2], :, 1))
-    end
+    trainingDataset = (trainingDataset[1], reshape(trainingDataset[2], :, 1))
+    validationDataset = (validationDataset[1], reshape(validationDataset[2], :, 1))
+    testDataset = (testDataset[1], reshape(testDataset[2], :, 1))
 
-    # Llamamos a la otra versión de la función trainClassANN
-    return trainClassANN(topology, trainingDataset; validationDataset, testDataset, transferFunctions, maxEpochs, minLoss, learningRate, maxEpochsVal)
+    return trainClassANN(topology, trainingDataset, validationDataset=validationDataset,
+        testDataset=testDataset, transferFunctions=transferFunctions,
+        maxEpochs=maxEpochs, minLoss=minLoss, learningRate=learningRate,
+        maxEpochsVal=maxEpochsVal)
 end
 
 # PARTE 9
