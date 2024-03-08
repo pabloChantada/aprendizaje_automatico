@@ -39,7 +39,7 @@ Ejercicio 3
 holdOut:
    Nota: 0.1
 
-# claudia
+# arreglado
 __trainClassANN:__
    __Error al ejecutar la función con 2 clases: StackOverflowError:__
 
