@@ -3,7 +3,7 @@ TESTEAR PARTES:
     8 -> Función no definida para argumentos de tipo
     9 -> Error al ejecutar con argumentos de tipo (Int, Real): MethodError: no method matching +(::Tuple{Int64}, ::Tuple{Int64})
 =#
-include("main.jl")
+include("35634619Y_48114048A_32740686W_48111913F.jl")
 #=
 
 
@@ -113,7 +113,6 @@ println("Incompleta con copy: ",new_normalize_values[1:15])
 # PARTE 5
 # --------------------------------------------------------------------------
 
-include("main.jl")
 
 # Caso 1: Una matriz con una sola columna
 outputs1 = [0.2; 0.7; 0.4]
@@ -135,7 +134,7 @@ println("¡Todos los casos de prueba pasaron!")
 
 
 # Llamar a la función de prueba
-test_classifyOutputs()
+#test_classifyOutputs()
 
 rows = 5
 cols = 5
@@ -312,7 +311,6 @@ test_buildClassANN()
 # PARTE 1
 # --------------------------------------------------------------------------
 
-include("main.jl")
 # Cargar la base de datos, teniendo los patrones en filas y atributos y salidas deseadas en columnas.
 dataset = readdlm("iris.data",',');
 inputs = dataset[:,1:4];
@@ -447,11 +445,10 @@ println("Tamaño del conjunto de test: ", length(index_test)," -> ", index_test)
 # --------------------------------------------------------------------------
 
 # Define some example outputs and targets
-include("main.jl")
 #outputs = [true, true, false, false, true, true, false, false]
 #targets = [true, false, true, false, true, false, true, false]
 
-#= 4.1
+# 4.1
 using Test
 # Test for the confusionMatrix function
 @testset "confusionMatrix" begin
@@ -488,12 +485,10 @@ println("Negative predictive value: ", negative_predictive_value)
 println("F-score: ", f_score)
 println("Confusion matrix:")
 printConfusionMatrix(outputs, targets)
-=#
-#= 4.2
+# 4.2
 
 # con valores pequeños no funciona por algun motivo ?¿¿ pero con grande si
 
-include("main.jl")
 
 outputs = rand(Bool, 3, 3)
 targets = rand(Bool, 3, 3)
@@ -507,10 +502,8 @@ println("Negative predictive value: ", negative_predictive_value)
 println("F-score: ", f_score)
 println("Confusion matrix:")
 printConfusionMatrix(outputs, targets)
-=#
 # PARTE 11
 # --------------------------------------------------------------------------
-include("main.jl")
 n = 20
 k = 5
 x = (crossvalidation(n,k))
