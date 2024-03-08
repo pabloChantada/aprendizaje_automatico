@@ -114,7 +114,7 @@ iterate(!Matched::T) where T<:Union{Base.KeySet{<:Any, <:Dict}, Base.ValueIterat
 
 -------------------------------------------------------------------------------------------------------------------------
 Ejercicio 5
-# pablo
+# arreglado
 __crossvalidation:__
    __Error al ejecutar la funcion con una sola columna: TypeError: non-boolean (Pair{Int64, Int64}) used in boolean context__
    __Error al ejecutar la funcion con una sola columna: TypeError: non-boolean (Pair{Int64, Int64}) used in boolean context__
@@ -124,7 +124,7 @@ __crossvalidation:__
    __Error al ejecutar la funcion con una sola columna: TypeError: non-boolean (Pair{Int64, Int64}) used in boolean context__
    __Indices con clases no equitativamente distribuidas en los grupos al ejecutar con parametros (AbstractArray{<:Any,1},Int64)__
 
-# claudia
+# arreglado
 __ANNCrossValidation:__
    __Resultados incorrectos: no devuelve una tupla de 7 valores donde cada uno es una tupla de 2 valores al entrenar la RNA__ 
    __Resultados incorrectos: no devuelve una tupla de 7 valores donde cada uno es una tupla de 2 valores al entrenar la RNA__ 
