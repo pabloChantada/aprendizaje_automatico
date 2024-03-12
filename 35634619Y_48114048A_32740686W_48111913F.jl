@@ -155,7 +155,7 @@ end
 
 # PARTE 6
 # --------------------------------------------------------------------------
-# correguida
+
 function accuracy(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1})
     #Las matrices targets y outputs deben tener la misma longitud.
     @assert length(targets) == length(outputs)
@@ -163,14 +163,15 @@ function accuracy(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1}
     return sum(targets .== outputs) / length(targets)
 end;
 
-# correguida
+# FALLA
 function accuracy(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2})
     @assert size(targets) == size(outputs)
     if size(outputs, 2) == 1
         return accuracy(outputs[:, 1], targets[:, 1]);
     else
-        mismatches = sum(targets .!= outputs, dims=2)
-        total_samples = size(targets, 1) * size(targets, 2)
+        # FALLO AQUI
+        mismatches = sum(targets .!= outputs, dims=1)  
+        total_samples = size(targets, 2) * size(targets, 1)
         if any(mismatches .> 0)
             accuracy_value = 1.0 - (sum(mismatches) / total_samples)
         else
@@ -180,7 +181,6 @@ function accuracy(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}
     end
 end
 
-# correguida
 function accuracy(outputs::AbstractArray{<:Real,1}, targets::AbstractArray{Bool,1}; threshold::Real=0.5)
     #Los vectores targets y outputs deben tener la misma longitud.
     @assert length(targets) == length(outputs)
@@ -188,6 +188,7 @@ function accuracy(outputs::AbstractArray{<:Real,1}, targets::AbstractArray{Bool,
     return accuracy(new_outputs, targets)
 end;
 
+# FALLA
 function accuracy(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; threshold::Real=0.5)
     #Las matrices targets y outputs deben tener las mismas dimensiones
     @assert size(targets) == size(outputs)
@@ -274,6 +275,8 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     val_losses = Float64[]
     test_losses = Float64[]
 
+    # creo que el fallo esta aqui, al ser 0 no entra en el bucle con un while se deberia arreglar creo
+    # while epoch < maxEpochs && val_loss > minLoss
     for epoch in 1:maxEpochs
 
         #Iniciamos el entrenamiento.
@@ -307,7 +310,11 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
             end
         end
         #Criterio de parada temprana: verificamos que el valor de pérdida actual no sea menor que el permitido.
-
+        # CON ESTO DEBERIA ESTAR CREO
+        # if val_loss <= minLoss
+        #   break
+        # end
+        # epoch += 1
     end
     #Devolvemos los valores del mejor modelo.
     println("Best model: ", typeof(best_model))
@@ -523,11 +530,19 @@ end;
 
 # PARTE 11 - Todo mal
 # --------------------------------------------------------------------------
-
+#=
+Error al ejecutar la funcion con una sola columna: AssertionError: Numero de particiones debe ser mayor o igual que 10
+Error al ejecutar la funcion con una sola columna: AssertionError: Numero de particiones debe ser mayor o igual que 10
+Error al ejecutar la funcion con una sola columna: AssertionError: Numero de particiones debe ser mayor o igual que 10
+=#
 function crossvalidation(N::Int64, k::Int64)
     # N -> numero de patrones
     # k -> numero de particiones
-    @assert k >= 1 "Numero de particiones incorrecto"
+    @assert k >= 1 "Numero de particiones debe ser mayor o igual que 1"
+    if N < k
+        @warn "Número de patrones es menor que el número de particiones. Devolviendo particiones únicas."
+        return collect(1:N)
+    end
     # Numero de elementos en cada particion
     k_vector = [1:k;]
     # Repetimos el vector k_vector hasta que sea mayor que N
@@ -543,7 +558,7 @@ end;
 
 function crossvalidation(targets::AbstractArray{Bool,1}, k::Int64)
     #
-    @assert k >= 10 "Numero de particiones debe ser mayor o igual que 10"
+    @assert k >= 1 "Numero de particiones debe ser mayor o igual que 1"
     index_vector = collect(1:length(targets))
     # Creamos un vector con el numero de particion a la que pertenece cada patron
     positive = crossvalidation(count(targets .== true ), k)
@@ -558,7 +573,7 @@ end;
 
 function crossvalidation(targets::AbstractArray{Bool,2}, k::Int64)
     #
-    @assert k >= 10 "Numero de particiones debe ser mayor o igual que 10"
+    @assert k >= 1 "Numero de particiones debe ser mayor o igual que 1"
     index_vector = Array{Int64}(undef, size(targets, 1))
     for i = 1:(size(targets, 2))
         elements = sum(targets[:, i])
@@ -572,7 +587,7 @@ end;
 
 function crossvalidation(targets::AbstractArray{<:Any,1}, k::Int64)
     # Cualquier tipo de dato
-    @assert k >= 10 "Numero de particiones debe ser mayor o igual que 10"
+    @assert k >= 1 "Numero de particiones debe ser mayor o igual que 1"
     unique_targets = unique(targets)
     if length(unique(targets)) >= 2
         index_vector = crossvalidation(oneHotEncoding(targets), k)
@@ -590,6 +605,7 @@ function crossvalidation(targets::AbstractArray{<:Any,1}, k::Int64)
     #
 end;
 
+# Error al ejecutar la funcion: BoundsError: attempt to access 30×3 Matrix{Float64} at index [1:30, [5, 8, 9, 7, 4, 7, 9, 8, 4, 4, 3, 5, 2, 3, 3, 10, 8, 2, 6, 7, 10, 10, 2, 6, 5, 6, 9]]
 function ANNCrossValidation(topology::AbstractArray{<:Int,1},
     inputs::AbstractArray{<:Real,2}, targets::AbstractArray{<:Any,1},
     crossValidationIndices::Array{Int64,1};
@@ -692,6 +708,7 @@ end;
 
 # PARTE 12
 # --------------------------------------------------------------------------
+
 function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
     inputs::AbstractArray{<:Real,2}, targets::AbstractArray{<:Any,1},
     crossValidationIndices::Array{Int64,1}) 
