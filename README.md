@@ -25,7 +25,7 @@ normalizeZeroMean:
 classifyOutputs:
    Nota: 0.25
 
-# PREGUNTAR
+# ARREGLADA, SON ACC POR ATRIBUTO NO POR ELEMENTO DE LA MATRIZ
 accuracy:
    Salidas incorrectas al hacer el calculo con parametros (AbstractArray{Bool,2},AbstractArray{Bool,2} al usar valores booleanos de mas de una columna
    Salidas incorrectas con parametros (AbstractArray{<:Real,2}, AbstractArray{Bool,2}; threshold::Real=0.5) al hacer el calculo con una matriz de valores reales como salidas y una matriz de valores booleanos como salidas deseadas, ambas de mas de una columna

@@ -68,6 +68,27 @@ end
     @test isequal(0.0, accuracy(outputs, targets))
 end
 
+include("35634619Y_48114048A_32740686W_48111913F.jl")
+
+# Acc es por los atributos -> 2/3 no  7/9
+outputs = [false false false true; 
+            false false false true; 
+            false false false true;]
+
+targets = [false false true false; 
+            false false false true; 
+            false false false true]
+
+outputs = [false false false true; 
+            false false true false; 
+            false true false false;]
+
+targets = [false false false true; 
+            false false false true; 
+            false false false true]
+
+accuracy(outputs, targets)
+
 # 3º
 @testset "Accuracy function 2" begin
     # Test case 1

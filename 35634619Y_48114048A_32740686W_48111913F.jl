@@ -169,15 +169,10 @@ function accuracy(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}
     if size(outputs, 2) == 1
         return accuracy(outputs[:, 1], targets[:, 1]);
     else
-        # FALLO AQUI
-        mismatches = sum(targets .!= outputs, dims=1)  
-        total_samples = size(targets, 2) * size(targets, 1)
-        if any(mismatches .> 0)
-            accuracy_value = 1.0 - (sum(mismatches) / total_samples)
-        else
-            accuracy_value = 1.0
-        end
-        return accuracy_value
+        mismatches = count(outputs .!= targets, dims = 2)
+        total_samples = size(targets, 1)
+        accuracy_values = accuracy_values = (count(mismatches .== 0)) / total_samples
+        return accuracy_values
     end
 end
 
