@@ -334,10 +334,9 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     validationDataset = (validationDataset[1], reshape(validationDataset[2], :, 1))
     testDataset = (testDataset[1], reshape(testDataset[2], :, 1))
 
-    return trainClassANN(topology, trainingDataset, validationDataset=validationDataset,
-        testDataset=testDataset, transferFunctions=transferFunctions,
-        maxEpochs=maxEpochs, minLoss=minLoss, learningRate=learningRate,
-        maxEpochsVal=maxEpochsVal)
+    return trainClassANN(topology, (trainingDataset, validationDataset, testDataset),
+        transferFunctions=transferFunctions, maxEpochs=maxEpochs, minLoss=minLoss,
+        learningRate=learningRate, maxEpochsVal=maxEpochsVal)
 end
 
 # PARTE 9
@@ -568,7 +567,7 @@ end;
 
 function crossvalidation(targets::AbstractArray{Bool,2}, k::Int64)
     #
-    @assert k >= 1 "Numero de particiones debe ser mayor o igual que 1"
+    @assert k >= 10 "Numero de particiones debe ser mayor o igual que 10"
     index_vector = Array{Int64}(undef, size(targets, 1))
     for i = 1:(size(targets, 2))
         elements = sum(targets[:, i])
@@ -665,13 +664,13 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
             negative_predictive_value = confusion_matrix[6]
             f_score = confusion_matrix[7]
 
-            push!(acc, precision)
-            push!(fail_rate, error_rate)
-            push!(sensitivity_values, sensitivity)
-            push!(specificity_values, specificity)
-            push!(positive_predictive_value, vpp)
-            push!(negative_predictive_value, vpn)
-            push!(f_score, f1)
+            push!(precision, acc)
+            push!(errorRate, fail_rate)
+            push!(sensitivity, sensitivity_values)
+            push!(specificity, specificity_values)
+            push!(VPP, positive_predictive_value)
+            push!(VPN, negative_predictive_value)
+            push!(F1, f_score)
         end
     end
 
@@ -690,6 +689,7 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
     VPN_std = std(VPN)
     F1_mean = mean(F1)
     F1_std = std(F1)
+
 
     return ((precision_mean, precision_std), 
             (errorRate_mean, errorRate_std), 
