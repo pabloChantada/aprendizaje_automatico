@@ -67,6 +67,23 @@ println(partitions3)
 @assert length(unique(partitions3)) == 3
 
 using Test
+
+
+include("35634619Y_48114048A_32740686W_48111913F.jl")
+
+using Test
+
+@testset "ANNCrossValidation test" begin
+    # Define tus datos de prueba aquí
+    topology = [5, 3, 2]
+    inputs = rand(10, 100)
+    targets = rand(5, 100)
+    crossValidationIndices = [1, 2, 3, 4, 5]
+
+    # Realiza la prueba
+    @test_throws BoundsError ANNCrossValidation(topology, inputs, targets, crossValidationIndices)
+end
+using Test
 include("35634619Y_48114048A_32740686W_48111913F.jl")
 
 # Test case 1: Confusion matrix with all correct predictions
@@ -329,7 +346,7 @@ include("35634619Y_48114048A_32740686W_48111913F.jl")
     println("Val losses: ", val_losses)
     println("Test losses: ", test_losses)
 end
-#=
+
 
 using Test
 include("35634619Y_48114048A_32740686W_48111913F.jl")
@@ -442,6 +459,7 @@ end
     @test macro_f_score ≈ expected_macro_f_score
 end
 
+#=
 include("35634619Y_48114048A_32740686W_48111913F.jl")
 outputs = [true true true;
             false false false;
