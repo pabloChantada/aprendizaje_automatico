@@ -2,7 +2,7 @@
 using Test
 include("35634619Y_48114048A_32740686W_48111913F.jl")
 
-# 1º
+# 1º6  
 @testset "Accuracy function" begin
     # Test case 1
     outputs = [true, true, false, false, true, false, false, true]
