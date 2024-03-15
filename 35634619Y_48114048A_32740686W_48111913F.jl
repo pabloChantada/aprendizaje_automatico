@@ -12,6 +12,8 @@ using FileIO;
 using DelimitedFiles;
 using Statistics;
 using Random;
+using ScikitLearn
+
 # PARTE 1
 # --------------------------------------------------------------------------
 
@@ -223,7 +225,7 @@ function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutp
     return ann
 end;
 
-#PARTE 8 - comprobnar
+#PARTE 8 - 
 # --------------------------------------------------------------------------
 function trainClassANN(topology::AbstractArray{<:Int,1},
     trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
@@ -270,9 +272,22 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     val_losses = Float64[]
     test_losses = Float64[]
 
-    # creo que el fallo esta aqui, al ser 0 no entra en el bucle con un while se deberia arreglar creo
-    # while epoch < maxEpochs && val_loss > minLoss
-    for epoch in 1:maxEpochs
+    #=
+    En la función trainClassANN, al generar los vectores de loss de entrenamiento, validación y test 
+    (estos dos últimos podría no haber que hacerlos), es necesario incluir como primer elemento el valor de loss en el "ciclo 0", es decir, 
+    antes de entrar en el bucle de entrenamiento. Por tanto, si se entrenan n ciclos, estos vectores tendrán n+1 valores. 
+    =#
+
+    # CAMBIADO
+    train_loss = loss(ann, inputs_train, targets_train)
+    val_loss = loss(ann, inputs_val, targets_val)
+    test_loss = loss(ann, inputs_test, targets_test)
+    
+    push!(train_losses, train_loss)
+    push!(val_losses, val_loss)
+    push!(test_losses, test_loss)
+    epoch = 1
+    while epoch < maxEpochs && val_loss > minLoss
 
         #Iniciamos el entrenamiento.
         Flux.train!(loss, ann, [(inputs_train, targets_train)], opt_state)
@@ -291,7 +306,7 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
         end
         # Si el valor de pérdida de el modelo actual es menor que el de la variable 'mejor modelo' definida 
         #anteriormente cambiamos las variables antiguas por las de nuetro modelo actual.
-        if val_loss < best_val_loss
+        if val_loss < best_val_loss 
             best_val_loss = val_loss
             best_model = deepcopy(ann)
             epochs_since_best = 0           #inicializamos y reiniciamos a la vez un contador de hace cuantos modelos que surgió el mejor.
@@ -305,14 +320,10 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
             end
         end
         #Criterio de parada temprana: verificamos que el valor de pérdida actual no sea menor que el permitido.
-        # CON ESTO DEBERIA ESTAR CREO
-        # if val_loss <= minLoss
-        #   break
-        # end
-        # epoch += 1
+        epoch += 1
     end
-    #Devolvemos los valores del mejor modelo.
-    println("Best model: ", typeof(best_model))
+    # Devolvemos los valores del mejor modelo.
+    # println("Best model: ", typeof(best_model))
     return best_model, train_losses, val_losses, test_losses
 end
 
@@ -379,7 +390,7 @@ end
 
 # PARTE 10
 # --------------------------------------------------------------------------
-# 4.1
+# 4.1 - Solucionado creo
 function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1})
     # Matrices cuadradadas = clases x clases
     # Muestra la distribucion de los patrones y la clasificacion que hace el modelo
@@ -389,17 +400,20 @@ function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{
     [VN FP;
      FN VP]
     =#
-    matrix = [sum((outputs .== false) .& (targets .== false)) sum((outputs .== false) .& (targets .== true));
-              sum((outputs .== true) .& (targets .== false)) sum((outputs .== true) .& (targets .== true))] 
+    matrix = [
+    sum((outputs .== false) .& (targets .== false)) sum((outputs .== true) .& (targets .== false));
+    sum((outputs .== false) .& (targets .== true)) sum((outputs .== true) .& (targets .== true))
+    ]
+
     vn, fp, fn, vp = matrix[1,1], matrix[1,2], matrix[2,1], matrix[2,2]
     matrix_accuracy = (vn + vp) / (vn + vp + fn + fp)
     fail_rate = (fn + fp) / (vn + vp + fn + fp)
 
-    sensitivity = vp / (fn + vp)
-    specificity = vn / (vn + fp)
-    positive_predictive_value = vp / (vp + fp)
-    negative_predictive_value = vn / (vn + fn)
-    f_score = 2 * (positive_predictive_value * sensitivity) / (positive_predictive_value + sensitivity)
+    sensitivity = vp / (fn + vp) |> x -> isnan(x) ? 0.0 : x
+    specificity = vn / (vn + fp) |> x -> isnan(x) ? 0.0 : x
+    positive_predictive_value = vp / (vp + fp) |> x -> isnan(x) ? 0.0 : x
+    negative_predictive_value = vn / (vn + fn) |> x -> isnan(x) ? 0.0 : x
+    f_score = 2 * (positive_predictive_value * sensitivity) / (positive_predictive_value + sensitivity) |> x -> isnan(x) ? 0.0 : x
     return matrix_accuracy, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix 
 end
 
@@ -435,8 +449,7 @@ end;
 function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
     # outputs = matriz de salidas
     # targets = matriz de salidas deseadas
-    @assert size(outputs) == size(targets) "Las matrices deben tener las mismas dimensiones"
-    @assert size(outputs, 2) != 2 "Las no pueden ser de dimension 2 (caso binario)" 
+    @assert size(outputs, 2) != 2 && size(outputs, 2) == size(targets, 2) "Las matrices deben tener el mismo número de columnas y no pueden tener una dimensión de 2 (caso binario)"
     if size(outputs, 2) == 1
         acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix = confusionMatrix(outputs, targets)
         @assert (all([in(output, unique(targets)) for output in outputs])) "Las salidas no estan en las clases deseadas"
@@ -453,7 +466,20 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
             _, _, sensitivity[i], specificity[i], positive_predictive_value[i], negative_predictive_value[i], f_score[i], _ = confusionMatrix(outputs[:,i], targets[:,i])
         end       
         # esto esta mal
-        matrix = [i == j ? positive_predictive_value[i] : 0 for i in 1:size(outputs, 2), j in 1:size(outputs, 2)]
+        # Define the unique classes
+
+        # Create the confusion matrix
+        matrix = zeros(Int, size(outputs, 2), size(outputs, 2))
+        println(matrix)
+        for real in size(outputs, 2)
+            for predicted in (targets, 2)
+                if real == predicted
+                    matrix[real, predicted] = sum((outputs .== real) .& (targets .== predicted))
+                else
+                    matrix[real, predicted] = sum((outputs .== real) .& (targets .== predicted))
+                end
+            end
+        end
 
         if weighted
             acc = accuracy(outputs, targets)
@@ -464,7 +490,7 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
             weighted_negative_predictive_value = sum(negative_predictive_value.* size(outputs, 2)) / length(negative_predictive_value)
             weighted_f_score = sum(f_score.* size(outputs, 2)) / length(f_score)
             @assert (all([in(output, unique(targets)) for output in outputs])) "Error: Los valores de salida no están en el conjunto de valores posibles de salida."
-            return acc, fail_rate, weighted_sensitivity, weighted_specificity, weighted_positive_predictive_value, weighted_negative_predictive_value, weighted_f_score
+            return (acc, fail_rate, weighted_sensitivity, weighted_specificity, weighted_positive_predictive_value, weighted_negative_predictive_value, weighted_f_score, matrix)
         else
             acc = accuracy(outputs, targets)
             fail_rate = 1 - acc
@@ -474,8 +500,10 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
             macro_negative_predictive_value = mean(negative_predictive_value)
             macro_f_score = mean(f_score)
             @assert (all([in(output, unique(targets)) for output in outputs])) "Error: Los valores de salida no están en el conjunto de valores posibles de salida."
-            return acc, fail_rate, macro_sensitivity, macro_specificity, macro_positive_predictive_value, macro_negative_predictive_value, macro_f_score
+            return (acc, fail_rate, macro_sensitivity, macro_specificity, macro_positive_predictive_value, macro_negative_predictive_value, macro_f_score, matrix)
         end
+        return matrix
+
     end
 end
 
@@ -497,7 +525,7 @@ function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray
     new_outputs = oneHotEncoding(outputs, classes_outputs)
     new_targets = oneHotEncoding(targets, classes_targets)
     acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix = confusionMatrix(new_outputs, new_targets; weighted=weighted)
-    return acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix
+    return (acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix)
     #
 end;
 
@@ -707,4 +735,106 @@ end;
 function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
     inputs::AbstractArray{<:Real,2}, targets::AbstractArray{<:Any,1},
     crossValidationIndices::Array{Int64,1}) 
+
+    # modelType -> tipo de modelo a entrenar
+        # ANN: red neuronal
+        # SVM: máquina de soporte vectorial
+        # DecisionTreeClassifier: árbol de decisión
+        # KNeighborsClassifier: k-vecinos más cercanos 
+    # modelHyperparameters -> hiperparámetros del modelo, DICT (haskey)
+    # SVM (:SVC): C, kernel, degree, gamma y coef0
+    # Árboles de decisión (:DecisionTreeClassifier): max_depth
+    # kNN (:KNeighborsClassifier): n_neighbor
+    # inputs -> matriz de patrones
+    # targets -> vector de salidas deseadas
+    # crossValidationIndices -> indices de las particiones de la validación cruzada, a división de los patrones 
+    # en cada fold es necesario hacerla fuera de esta función
+    @sk_import svm: SVC
+    @sk_import tree: DecisionTreeClassifier
+    @sk_import neighbors: KNeighborsClassifier 
+
+
+    if modelType == :ANN
+        # Crear y entrenar la red neuronal
+        return ANNCrossValidation(modelHyperparameters[:topology], inputs, targets, crossValidationIndices;
+            numExecutions=modelHyperparameters[:numExecutions],
+            transferFunctions=modelHyperparameters[:transferFunctions],
+            maxEpochs=modelHyperparameters[:maxEpochs],
+            minLoss=modelHyperparameters[:minLoss],
+            learningRate=modelHyperparameters[:learningRate],
+            validationRatio=modelHyperparameters[:validationRatio],
+            maxEpochsVal=modelHyperparameters[:maxEpochsVal])
+    else
+        # Pasar a string para evitar problemas con python
+        targets = string.(targets);
+        # Calcular el número de folds-
+        numFolds = maximum(crossValidationIndices)
+
+        # Variables para almacenar las métricas
+        precision = Float64[]
+        errorRate = Float64[]
+        sensitivity = Float64[]
+        specificity = Float64[]
+        VPP = Float64[]
+        VPN = Float64[]
+        F1 = Float64[]
+
+
+        # Bucle de validación cruzada
+        for fold in 1:numFolds
+            # Obtener los índices de entrenamiento y test para el fold actual
+            train_indices = findall(x -> x != fold, crossValidationIndices)
+            test_indices = findall(x -> x == fold, crossValidationIndices)
+
+            # Crear las matrices de entrenamiento y test
+            train_inputs = inputs[:, train_indices]
+            test_inputs = inputs[:, test_indices]
+
+            # Crear los vectores de salidas deseadas de entrenamiento y test
+            train_targets = targets[train_indices]
+            test_targets = targets[test_indices]
+
+            # Crear el modelo con los hiperparámetros especificados
+            if modelType == :SVM
+                model = SVC(train_inputs, train_targets;
+                    C=modelHyperparameters[:C],
+                    kernel=modelHyperparameters[:kernel],
+                    degree=modelHyperparameters[:degree],
+                    gamma=modelHyperparameters[:gamma],
+                    coef0=modelHyperparameters[:coef0])
+            elseif modelType == :DecisionTreeClassifier
+                model = DecisionTreeClassifier(train_inputs, train_targets;
+                    max_depth=modelHyperparameters[:max_depth])
+            elseif modelType == :KNeighborsClassifier
+                model = KNeighborsClassifier(train_inputs, train_targets;
+                    n_neighbors=modelHyperparameters[:n_neighbors])
+            end
+
+            # Entrenar el modelo
+            fit!(model, train_inputs, train_targets);
+
+            # Aplicar el conjunto de test
+            predictions = predict(model, test_inputs)
+
+            # Calcular las métricas con la función confusionMatrix
+            confusion_matrix = confusionMatrix(predictions, test_targets)
+
+            # Asignar los valores a las posiciones correspondientes de los vectores
+            acc = confusion_matrix[1]
+            fail_rate = confusion_matrix[2]
+            sensitivity_values = confusion_matrix[3]
+            specificity_values = confusion_matrix[4]
+            positive_predictive_value = confusion_matrix[5]
+            negative_predictive_value = confusion_matrix[6]
+            f_score = confusion_matrix[7]
+
+            push!(precision, acc)
+            push!(errorRate, fail_rate)
+            push!(sensitivity, sensitivity_values)
+            push!(specificity, specificity_values)
+            push!(VPP, positive_predictive_value)
+            push!(VPN, negative_predictive_value)
+            push!(F1, f_score)
+        end
+    end
 end;

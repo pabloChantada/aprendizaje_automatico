@@ -27,7 +27,7 @@ classifyOutputs:
 
 # ARREGLADA, SON ACC POR ATRIBUTO NO POR ELEMENTO DE LA MATRIZ
 accuracy:
-   Salidas incorrectas al hacer el calculo con parametros (AbstractArray{Bool,2},AbstractArray{Bool,2} al usar valores booleanos de mas de una columna
+   Salidas incorrectas al hacer el calculo con parametros (AbstractArray{Bool,2},AbstractArray{Bool,2} al usar valores booleanos de mas de una columna)
    Salidas incorrectas con parametros (AbstractArray{<:Real,2}, AbstractArray{Bool,2}; threshold::Real=0.5) al hacer el calculo con una matriz de valores reales como salidas y una matriz de valores booleanos como salidas deseadas, ambas de mas de una columna
 
 buildClassANN:
@@ -40,14 +40,14 @@ Ejercicio 3
 holdOut:
    Nota: 0.1
 
-# ARREGLAR
+# Arreglao creo
 __trainClassANN:__
       Valores de loss de entrenamiento incorrectos al ejecutar la función con 2 clases con conjunto de validacion al entrenar un maximo de 0 ciclos
 
 -------------------------------------------------------------------------------------------------------------------------
 Ejercicio 4
 
-# pablo
+# Arreglao
 confusionMatrix:
    Salida incorrecta al ejecutar la funcion con un vector de valores booleanos (2 clases): sensibilidad incorrecta
    Salida incorrecta al ejecutar la funcion con un vector de valores booleanos (2 clases): especificidad incorrecta
@@ -98,6 +98,9 @@ confusionMatrix:
    Salida incorrecta al ejecutar la funcion con un vector de salidas reales (2 clases): VPP incorrecta
    Salida incorrecta al ejecutar la funcion con un vector de salidas reales (2 clases): VPN incorrecta
    Salida incorrecta al ejecutar la funcion con un vector de salidas reales (2 clases): matriz de confusion incorrecta
+
+
+
    Salidas incorrectas al ejecutar la funcion con una matriz (multiclase) de valores booleanos y weighted=true: la salida no es una tupla de 8 elementos, con 7 valores reales y una matriz
    Salidas incorrectas al ejecutar la funcion con una matriz (multiclase) de valores booleanos y weighted=false: la salida no es una tupla de 8 elementos, con 7 valores reales y una matriz
    Salidas incorrectas al ejecutar la funcion con una matriz (multiclase) de valores reales y weighted=true: la salida no es una tupla de 8 elementos, con 7 valores reales y una matriz
