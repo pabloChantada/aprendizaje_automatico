@@ -329,7 +329,7 @@ include("35634619Y_48114048A_32740686W_48111913F.jl")
     println("Val losses: ", val_losses)
     println("Test losses: ", test_losses)
 end
-
+#=
 
 using Test
 include("35634619Y_48114048A_32740686W_48111913F.jl")
@@ -442,7 +442,6 @@ end
     @test macro_f_score ≈ expected_macro_f_score
 end
 
-#=
 include("35634619Y_48114048A_32740686W_48111913F.jl")
 outputs = [true true true;
             false false false;

@@ -12,7 +12,7 @@ using FileIO;
 using DelimitedFiles;
 using Statistics;
 using Random;
-using ScikitLearn
+using ScikitLearn;
 
 # PARTE 1
 # --------------------------------------------------------------------------
@@ -628,6 +628,7 @@ function crossvalidation(targets::AbstractArray{<:Any,1}, k::Int64)
 end;
 
 # Error al ejecutar la funcion: BoundsError: attempt to access 30×3 Matrix{Float64} at index [1:30, [5, 8, 9, 7, 4, 7, 9, 8, 4, 4, 3, 5, 2, 3, 3, 10, 8, 2, 6, 7, 10, 10, 2, 6, 5, 6, 9]]
+
 function ANNCrossValidation(topology::AbstractArray{<:Int,1},
     inputs::AbstractArray{<:Real,2}, targets::AbstractArray{<:Any,1},
     crossValidationIndices::Array{Int64,1};
@@ -727,114 +728,6 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
             (VPN_mean, VPN_std), 
             (F1_mean, F1_std))
 end;
-    
 
 # PARTE 12
 # --------------------------------------------------------------------------
-
-function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
-    inputs::AbstractArray{<:Real,2}, targets::AbstractArray{<:Any,1},
-    crossValidationIndices::Array{Int64,1}) 
-
-    # modelType -> tipo de modelo a entrenar
-        # ANN: red neuronal
-        # SVM: máquina de soporte vectorial
-        # DecisionTreeClassifier: árbol de decisión
-        # KNeighborsClassifier: k-vecinos más cercanos 
-    # modelHyperparameters -> hiperparámetros del modelo, DICT (haskey)
-    # SVM (:SVC): C, kernel, degree, gamma y coef0
-    # Árboles de decisión (:DecisionTreeClassifier): max_depth
-    # kNN (:KNeighborsClassifier): n_neighbor
-    # inputs -> matriz de patrones
-    # targets -> vector de salidas deseadas
-    # crossValidationIndices -> indices de las particiones de la validación cruzada, a división de los patrones 
-    # en cada fold es necesario hacerla fuera de esta función
-    @sk_import svm: SVC
-    @sk_import tree: DecisionTreeClassifier
-    @sk_import neighbors: KNeighborsClassifier 
-
-
-    if modelType == :ANN
-        # Crear y entrenar la red neuronal
-        return ANNCrossValidation(modelHyperparameters[:topology], inputs, targets, crossValidationIndices;
-            numExecutions=modelHyperparameters[:numExecutions],
-            transferFunctions=modelHyperparameters[:transferFunctions],
-            maxEpochs=modelHyperparameters[:maxEpochs],
-            minLoss=modelHyperparameters[:minLoss],
-            learningRate=modelHyperparameters[:learningRate],
-            validationRatio=modelHyperparameters[:validationRatio],
-            maxEpochsVal=modelHyperparameters[:maxEpochsVal])
-    else
-        # Pasar a string para evitar problemas con python
-        targets = string.(targets);
-        # Calcular el número de folds-
-        numFolds = maximum(crossValidationIndices)
-
-        # Variables para almacenar las métricas
-        precision = Float64[]
-        errorRate = Float64[]
-        sensitivity = Float64[]
-        specificity = Float64[]
-        VPP = Float64[]
-        VPN = Float64[]
-        F1 = Float64[]
-
-
-        # Bucle de validación cruzada
-        for fold in 1:numFolds
-            # Obtener los índices de entrenamiento y test para el fold actual
-            train_indices = findall(x -> x != fold, crossValidationIndices)
-            test_indices = findall(x -> x == fold, crossValidationIndices)
-
-            # Crear las matrices de entrenamiento y test
-            train_inputs = inputs[:, train_indices]
-            test_inputs = inputs[:, test_indices]
-
-            # Crear los vectores de salidas deseadas de entrenamiento y test
-            train_targets = targets[train_indices]
-            test_targets = targets[test_indices]
-
-            # Crear el modelo con los hiperparámetros especificados
-            if modelType == :SVM
-                model = SVC(train_inputs, train_targets;
-                    C=modelHyperparameters[:C],
-                    kernel=modelHyperparameters[:kernel],
-                    degree=modelHyperparameters[:degree],
-                    gamma=modelHyperparameters[:gamma],
-                    coef0=modelHyperparameters[:coef0])
-            elseif modelType == :DecisionTreeClassifier
-                model = DecisionTreeClassifier(train_inputs, train_targets;
-                    max_depth=modelHyperparameters[:max_depth])
-            elseif modelType == :KNeighborsClassifier
-                model = KNeighborsClassifier(train_inputs, train_targets;
-                    n_neighbors=modelHyperparameters[:n_neighbors])
-            end
-
-            # Entrenar el modelo
-            fit!(model, train_inputs, train_targets);
-
-            # Aplicar el conjunto de test
-            predictions = predict(model, test_inputs)
-
-            # Calcular las métricas con la función confusionMatrix
-            confusion_matrix = confusionMatrix(predictions, test_targets)
-
-            # Asignar los valores a las posiciones correspondientes de los vectores
-            acc = confusion_matrix[1]
-            fail_rate = confusion_matrix[2]
-            sensitivity_values = confusion_matrix[3]
-            specificity_values = confusion_matrix[4]
-            positive_predictive_value = confusion_matrix[5]
-            negative_predictive_value = confusion_matrix[6]
-            f_score = confusion_matrix[7]
-
-            push!(precision, acc)
-            push!(errorRate, fail_rate)
-            push!(sensitivity, sensitivity_values)
-            push!(specificity, specificity_values)
-            push!(VPP, positive_predictive_value)
-            push!(VPN, negative_predictive_value)
-            push!(F1, f_score)
-        end
-    end
-end;
