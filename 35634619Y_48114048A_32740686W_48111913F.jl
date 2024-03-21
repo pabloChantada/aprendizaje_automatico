@@ -165,7 +165,6 @@ function accuracy(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1}
     return sum(targets .== outputs) / length(targets)
 end;
 
-# FALLA
 function accuracy(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2})
     @assert size(targets) == size(outputs)
     if size(outputs, 2) == 1
@@ -185,7 +184,6 @@ function accuracy(outputs::AbstractArray{<:Real,1}, targets::AbstractArray{Bool,
     return accuracy(new_outputs, targets)
 end;
 
-# FALLA
 function accuracy(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; threshold::Real=0.5)
     #Las matrices targets y outputs deben tener las mismas dimensiones
     @assert size(targets) == size(outputs)
@@ -250,7 +248,7 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     targets_val = transpose(targets_val)
     inputs_test = transpose(inputs_test)
     targets_test = transpose(targets_test)
-
+    
     # Creamos la RNA:
     ann = buildClassANN(size(inputs_train,1), topology, size(targets_train,1); transferFunctions=transferFunctions)
 
@@ -267,18 +265,11 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     epochs_since_best = 0
 
     # Creamos los vectores que se utilizan para almacenar los valores de pérdida (loss) durante el 
-    #entrenamiento de la red neuronal en los conjuntos de datos de entrenamiento, validación y prueba, respectivamente.
     train_losses = Float64[]
     val_losses = Float64[]
     test_losses = Float64[]
-
-    #=
-    En la función trainClassANN, al generar los vectores de loss de entrenamiento, validación y test 
-    (estos dos últimos podría no haber que hacerlos), es necesario incluir como primer elemento el valor de loss en el "ciclo 0", es decir, 
-    antes de entrar en el bucle de entrenamiento. Por tanto, si se entrenan n ciclos, estos vectores tendrán n+1 valores. 
-    =#
-
-    # CAMBIADO
+    
+    # AQUI
     train_loss = loss(ann, inputs_train, targets_train)
     val_loss = loss(ann, inputs_val, targets_val)
     test_loss = loss(ann, inputs_test, targets_test)
@@ -290,9 +281,11 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     while epoch < maxEpochs && val_loss > minLoss
 
         #Iniciamos el entrenamiento.
+        # MIRAR AQUI
         Flux.train!(loss, ann, [(inputs_train, targets_train)], opt_state)
         
         # Calculamos los valores de pérdida de cada conjunto.
+        # MIRAR AQUI
         train_loss = loss(ann, inputs_train, targets_train)
         val_loss = loss(ann, inputs_val, targets_val)
         test_loss = loss(ann, inputs_test, targets_test)
@@ -322,8 +315,6 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
         #Criterio de parada temprana: verificamos que el valor de pérdida actual no sea menor que el permitido.
         epoch += 1
     end
-    # Devolvemos los valores del mejor modelo.
-    # println("Best model: ", typeof(best_model))
     return best_model, train_losses, val_losses, test_losses
 end
 
@@ -514,7 +505,6 @@ function confusionMatrix(outputs::AbstractArray{<:Real,2}, targets::AbstractArra
     #
 end;
 
-# fallo aqui
 function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray{<:Any,1}; weighted::Bool=true)
     #
     @assert length(unique(outputs)) == length(unique(targets)) "Las matrices deben tener las mismas dimensiones"
@@ -552,11 +542,7 @@ end;
 
 # PARTE 11 - Todo mal
 # --------------------------------------------------------------------------
-#=
-Error al ejecutar la funcion con una sola columna: AssertionError: Numero de particiones debe ser mayor o igual que 10
-Error al ejecutar la funcion con una sola columna: AssertionError: Numero de particiones debe ser mayor o igual que 10
-Error al ejecutar la funcion con una sola columna: AssertionError: Numero de particiones debe ser mayor o igual que 10
-=#
+
 function crossvalidation(N::Int64, k::Int64)
     # N -> numero de patrones
     # k -> numero de particiones
@@ -594,17 +580,23 @@ function crossvalidation(targets::AbstractArray{Bool,1}, k::Int64)
 end;
 
 function crossvalidation(targets::AbstractArray{Bool,2}, k::Int64)
-    #
-    @assert k >= 10 "Numero de particiones debe ser mayor o igual que 10"
-    index_vector = Array{Int64}(undef, size(targets, 1))
+    # N -> vecto de longitud = al numero de filas
+    # Cada elemento indica el subconjunto al que pertenece
+
+    @assert k >= 1 "Numero de particiones debe ser mayor o igual que 1"
+
+    index_vector = Vector{Any}(undef, size(targets, 1))
     for i = 1:(size(targets, 2))
-        elements = sum(targets[:, i])
+        # Numero de elementos en cada particion
+        elements = sum(targets[:, i] .== 1)
         col_positions = crossvalidation(elements, k)
-        index_vector[findall(targets[:, i] .== true), i] .= col_positions
+        #=
+        Aquí, findall(targets[:, i] .== 1) encuentra las posiciones donde el valor en la columna correspondiente de targets es 1, luego se asignan los valores de col_positions a esas posiciones en index_vector.
+        =#
+        index_vector[findall(targets[:, i] .== 1)] .= col_positions
     end
     @assert length(index_vector) == size(targets, 1) "Error en la particion"
     return index_vector
-    #
 end;
 
 function crossvalidation(targets::AbstractArray{<:Any,1}, k::Int64)
@@ -624,10 +616,7 @@ function crossvalidation(targets::AbstractArray{<:Any,1}, k::Int64)
         @assert length(index_vector) == length(targets) "Error en la particion"
         return index_vector
     end
-    #
 end;
-
-# Error al ejecutar la funcion: BoundsError: attempt to access 30×3 Matrix{Float64} at index [1:30, [5, 8, 9, 7, 4, 7, 9, 8, 4, 4, 3, 5, 2, 3, 3, 10, 8, 2, 6, 7, 10, 10, 2, 6, 5, 6, 9]]
 
 function ANNCrossValidation(topology::AbstractArray{<:Int,1},
     inputs::AbstractArray{<:Real,2}, targets::AbstractArray{<:Any,1},
