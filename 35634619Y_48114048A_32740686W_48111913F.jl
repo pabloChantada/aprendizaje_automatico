@@ -650,39 +650,68 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
     VPN = Float64[]
     F1 = Float64[]
 
+    #Pasos únicos para crear una RNA
     # One-hot-encoding del vector de salidas deseadas
     targets_onehot = oneHotEncoding(targets)
+    
 
     # Realizar la validación cruzada
     for fold in 1:numFolds
         
         # Separar los datos de entrenamiento y test
-        train_indices = filter(x -> x != fold, crossValidationIndices)
+        train_indices = findall(i -> i != fold, crossValidationIndices)
         test_indices = findall(x -> x == fold, crossValidationIndices)
 
         train_inputs = inputs[:, train_indices]
         train_targets = targets_onehot[:, train_indices]
-        test_inputs = inputs[:, test_indices]
-        test_targets = targets_onehot[test_indices]
 
-        # Crear y entrenar la red neuronal en este fold
-        ann = buildClassANN(size(train_inputs, 2), topology, size(train_targets, 1),
-                            transferFunctions=transferFunctions)
+        test_inputs = inputs[:, test_indices]
+        test_targets = targets_onehot[:, test_indices]
 
 
         # Bucle para repetir el entrenamiento dentro del fold
         for _ in 1:numExecutions
-
+             
             # Entrenar la red neuronal
-            ann_trained = trainClassANN(ann, (train_inputs, train_targets),
-                validationDataset=(validation_inputs, validation_targets),
-                transferFunctions=transferFunctions,
-                maxEpochs=maxEpochs, minLoss=minLoss,
-                learningRate=learningRate,
-                maxEpochsVal=maxEpochsVal)
+            
+            if validationRatio > 0
+                # Determinar el tamaño del conjunto de validación
+                total_size = size(inputs, 2) + size(targets_onehot, 2)
+                size_train = size(train_inputs, 2)
 
+
+                validationRatio = (size_train * validationRatio) / total_size
+                P = (1 - validationRatio)
+                N = size_train
+
+                # Obtener los índices para el conjunto de validación
+                validation_indices = holdOut(N, P)
+                
+                # Conjunto de validación
+                validation_inputs = train_inputs[:, validation_indices]
+                validation_targets = train_targets[:, validation_indices]
+
+
+                train_inputs, validation_inputs = holdOut
+                ann_trained = trainClassANN(topology, (train_inputs, train_targets),
+                    validationDataset=(validation_inputs, validation_targets), testDataset=(test_inputs, test_targets),
+                    transferFunctions=transferFunctions,
+                    maxEpochs=maxEpochs, minLoss=minLoss,
+                    learningRate=learningRate,
+                    maxEpochsVal=maxEpochsVal)
+            else
+                
+                ann_trained = trainClassANN(topology, (train_inputs, train_targets),
+                    validationDataset=(train_inputs, train_targets), testDataset=(test_inputs, test_targets),
+                    transferFunctions=transferFunctions,
+                    maxEpochs=maxEpochs, minLoss=minLoss,
+                    learningRate=learningRate,
+                    maxEpochsVal=maxEpochsVal)
+            end 
+            
+            
             # Evaluar la red neuronal con el conjunto de prueba
-            confusion_matrix = confusionMatrix(predict(ann_trained, test_inputs), test_targets)
+            confusion_matrix = confusionMatrix(ann_trained[1](test_inputs), test_targets)
 
         
             # Coger las  métricas y almacenarlas en los vectores correspondientes
@@ -729,6 +758,9 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
             (VPN_mean, VPN_std), 
             (F1_mean, F1_std))
 end;
+
+
+
 
 # PARTE 12
 # --------------------------------------------------------------------------
