@@ -1,4 +1,5 @@
 using Test
+
 include("35634619Y_48114048A_32740686W_48111913F.jl")
 targets = [1 0 0 0; 
             1 0 0 0;
@@ -137,4 +138,3 @@ end
     test_confusionMatrix_case2()
     test_confusionMatrix_case3()
 end
-
