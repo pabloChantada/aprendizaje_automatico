@@ -7,8 +7,7 @@ function test_ANNCrossValidation()
     topology = [2, 2, 1]
     inputs = [0 0; 0 1; 1 0; 1 1]'
     targets = [1, 0, 0, 0, 1, 1, 0]
-    crossValidationIndices = [1, 2, 3, 1, 2, 3, 1]
- 
+    crossValidationIndices = [1, 2, 1, 2]  # Solo para este ejemplo, debes proporcionar tus propios índices de validación cruzada
 
     # Ejecutar la función
     results = ANNCrossValidation(topology, inputs, targets, crossValidationIndices)

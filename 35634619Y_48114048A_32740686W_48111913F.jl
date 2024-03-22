@@ -641,7 +641,7 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
 
     #Pasos únicos para crear una RNA
     # One-hot-encoding del vector de salidas deseadas
-    targets_onehot = [ false false true true; false true false true]
+    targets_onehot = [0 1 1 1; 1 0 0 0]
     println("inputs: ", inputs)
     println("targets: ", targets)
     println("targets_onehot: ", targets_onehot)
@@ -651,13 +651,17 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
     for fold in 1:numFolds
         
         # Separar los datos de entrenamiento y test
-        train_indices = filter(i -> i != fold, crossValidationIndices)
+        train_indices = findall(i -> i != fold, crossValidationIndices)
         test_indices = findall(x -> x == fold, crossValidationIndices)
 
         train_inputs = inputs[:, train_indices]
         train_targets = targets_onehot[:, train_indices]
+
         test_inputs = inputs[:, test_indices]
         test_targets = targets_onehot[:, test_indices]
+
+        println("test_inputs", test_inputs)
+        println("test_targets", test_targets)
 
         # Bucle para repetir el entrenamiento dentro del fold
         for _ in 1:numExecutions
@@ -699,9 +703,9 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
                     maxEpochsVal=maxEpochsVal)
             end 
             
-            outputs = ann_trained[1](test_inputs)
+            
             # Evaluar la red neuronal con el conjunto de prueba
-            confusion_matrix = confusionMatrix(outputs, test_targets)
+            confusion_matrix = confusionMatrix(ann_trained[1](test_inputs), test_targets)
 
         
             # Coger las  métricas y almacenarlas en los vectores correspondientes
