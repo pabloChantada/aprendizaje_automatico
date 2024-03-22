@@ -639,20 +639,25 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
     VPN = Float64[]
     F1 = Float64[]
 
+    #Pasos únicos para crear una RNA
     # One-hot-encoding del vector de salidas deseadas
-    targets_onehot = oneHotEncoding(targets)
+    targets_onehot = [true false false true; false true true false]
+    println("inputs: ", inputs)
+    println("targets: ", targets)
+    println("targets_onehot: ", targets_onehot)
+
 
     # Realizar la validación cruzada
     for fold in 1:numFolds
         
         # Separar los datos de entrenamiento y test
-        train_indices = filter(x -> x != fold, crossValidationIndices)
+        train_indices = filter(i -> i != fold, crossValidationIndices)
         test_indices = findall(x -> x == fold, crossValidationIndices)
 
         train_inputs = inputs[:, train_indices]
         train_targets = targets_onehot[:, train_indices]
         test_inputs = inputs[:, test_indices]
-        test_targets = targets_onehot[test_indices]
+        test_targets = targets_onehot[:, test_indices]
 
         # Crear y entrenar la red neuronal en este fold
         ann = buildClassANN(size(train_inputs, 2), topology, size(train_targets, 1),
@@ -664,11 +669,16 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
 
             # Entrenar la red neuronal
             ann_trained = trainClassANN(ann, (train_inputs, train_targets),
-                validationDataset=(validation_inputs, validation_targets),
+                validationDataset=(test_inputs, test_targets),
                 transferFunctions=transferFunctions,
                 maxEpochs=maxEpochs, minLoss=minLoss,
-                learningRate=learningRate,
+                learningRate=validationRatio,
                 maxEpochsVal=maxEpochsVal)
+
+
+
+
+                
 
             # Evaluar la red neuronal con el conjunto de prueba
             confusion_matrix = confusionMatrix(predict(ann_trained, test_inputs), test_targets)
@@ -719,5 +729,6 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
             (F1_mean, F1_std))
 end;
 
-# PARTE 12
-# --------------------------------------------------------------------------
+
+
+
