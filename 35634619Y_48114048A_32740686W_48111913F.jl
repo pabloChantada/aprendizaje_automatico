@@ -764,3 +764,92 @@ end;
 
 # PARTE 12
 # --------------------------------------------------------------------------
+using ScikitLearn
+@sk_import svm: SVC
+@sk_import tree: DecisionTreeClassifier
+@sk_import neighbors: KNeighborsClassifier 
+
+function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
+                              inputs::AbstractArray{<:Real,2}, targets::AbstractArray{<:Any,1},
+                              crossValidationIndices::Array{Int64,1})
+
+    # Verificamos si el modelo a entrenar es una red neuronal
+    if modelType == :ANN
+        # Llamamos a la función ANNCrossValidation con los hiperparámetros
+        return ANNCrossValidation(modelHyperparameters["topology"], inputs, targets, crossValidationIndices)
+    else
+        # Convertimos el vector de salidas deseada a texto para evitar errores con la librería de Python
+        targets = string.(targets)
+
+        # Creamos vectores para almacenar los resultados de las métricas en cada fold
+        precision = []
+        error_rate = []
+        sensitivity = []
+        specificity = []
+        VPP = []
+        VPN = []
+        F1 = []
+
+        # Comenzamos la validación cruzada
+        for test_indices in crossValidationIndices
+            # Obtenemos los índices de entrenamiento
+            train_indices = filter(x -> !(x in test_indices), 1:size(inputs, 1))
+            # Convertimos el rango en un vector de índices
+            test_indices = collect(test_indices)
+
+            # Dividimos los datos en entrenamiento y prueba
+            train_inputs = inputs[train_indices, :]
+            train_targets = targets[train_indices]
+            test_inputs = inputs[test_indices, :]
+            test_targets = targets[test_indices]
+
+            # Creamos el modelo según el tipo especificado
+            if modelType == :SVC
+                model = SVC(C=modelHyperparameters["C"], kernel=modelHyperparameters["kernel"],
+                            degree=modelHyperparameters["degree"], gamma=modelHyperparameters["gamma"],
+                            coef0=modelHyperparameters["coef0"])
+            elseif modelType == :DecisionTreeClassifier
+                model = DecisionTreeClassifier(max_depth=modelHyperparameters["max_depth"])
+            elseif modelType == :KNeighborsClassifier
+                model = KNeighborsClassifier(n_neighbors=modelHyperparameters["n_neighbors"])
+            end
+
+            # Entrenamos el modelo
+                model = fit!(model, train_inputs, train_targets)
+
+            # Realizamos predicciones en el conjunto de prueba
+            predictions = model(test_inputs)
+
+            # Calculamos la matriz de confusión y métricas
+            cm = confusionMatrix(test_targets, predictions)
+            push!(precision, cm[1])
+            push!(error_rate, cm[2])
+            push!(sensitivity, cm[3])
+            push!(specificity, cm[4])
+            push!(VPP, cm[5])
+            push!(VPN, cm[6])
+            push!(F1, cm[7])
+        end
+
+        # Calculamos la media y desviación estándar de las métricas en todos los folds
+        mean_precision = mean(precision)
+        std_precision = std(precision)
+        mean_error_rate = mean(error_rate)
+        std_error_rate = std(error_rate)
+        mean_sensitivity = mean(sensitivity)
+        std_sensitivity = std(sensitivity)
+        mean_specificity = mean(specificity)
+        std_specificity = std(specificity)
+        mean_VPP = mean(VPP)
+        std_VPP = std(VPP)
+        mean_VPN = mean(VPN)
+        std_VPN = std(VPN)
+        mean_F1 = mean(F1)
+        std_F1 = std(F1)
+
+        # Devolvemos los resultados como una tupla de tuplas
+        return ((mean_precision, std_precision), (mean_error_rate, std_error_rate),
+                (mean_sensitivity, std_sensitivity), (mean_specificity, std_specificity),
+                (mean_VPP, std_VPP), (mean_VPN, std_VPN), (mean_F1, std_F1))
+    end
+end
