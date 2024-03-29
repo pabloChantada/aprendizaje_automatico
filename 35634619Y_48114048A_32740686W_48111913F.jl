@@ -627,19 +627,14 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
     acc, fail_rate, sensitivity, specificity, VPP, VPN, F1 = [], [], [], [], [], [], []
     # Realizar la validación cruzada
     for fold in 1:numFolds
-        
         # Separar los datos de entrenamiento y test
         train_indices = findall(i -> i != fold, crossValidationIndices)
         test_indices = findall(x -> x == fold, crossValidationIndices)
 
         train_inputs = inputs[:, train_indices]
-        # Mirarlo
         train_targets = targets_onehot[train_indices]
         test_inputs = inputs[:, test_indices]
         test_targets = targets_onehot[test_indices]
-        # Bucle para repetir el entrenamiento dentro del fold
-        acc_fold, errorRate_fold, sensitivity_fold, specificity_fold, VPP_fold, VPN_fold, F1_fold = [], [], [], [], [], [], []
-
         for _ in 1:numExecutions
             # Entrenar la red neuronal
             if validationRatio > 0
@@ -673,8 +668,7 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
                     maxEpochsVal=maxEpochsVal)
             end 
 
-            test_ann = ann_trained[4]
-            confusion_matrix = confusionMatrix(classifyOutputs(test_ann), test_targets)
+            confusion_matrix = confusionMatrix(vec(ann_trained[1](test_inputs)), test_targets)
 
             push!(acc, confusion_matrix[1])
             push!(fail_rate, confusion_matrix[2])
@@ -687,7 +681,7 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
     end
     # Calcular medias y desviaciones estándar de las métricas de todos los folds
     return ((mean(acc), std(acc)), 
-            (mean(errorRate), std(errorRate)), 
+            (mean(fail_rate), std(fail_rate)), 
             (mean(sensitivity), std(sensitivity)), 
             (mean(specificity), std(specificity)), 
             (mean(VPP), std(VPP)), 
@@ -697,7 +691,6 @@ end;
 
 # PARTE 12
 # --------------------------------------------------------------------------
-
 
 function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
                               inputs::AbstractArray{<:Real,2}, targets::AbstractArray{<:Any,1},
