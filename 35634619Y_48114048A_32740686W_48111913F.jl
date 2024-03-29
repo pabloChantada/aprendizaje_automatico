@@ -14,6 +14,10 @@ using Statistics;
 using Random;
 using ScikitLearn;
 using LinearAlgebra;
+using ScikitLearn
+@sk_import svm: SVC
+@sk_import tree: DecisionTreeClassifier
+@sk_import neighbors: KNeighborsClassifier 
 
 # PARTE 1
 # --------------------------------------------------------------------------
@@ -617,21 +621,10 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
     
     # Calcular el número de folds
     numFolds = maximum(crossValidationIndices)
-
+    targets_onehot = oneHotEncoding(targets)
     # Variables para almacenar las métricas
     # Comunes para cualquier modelo
-    accuracy = Float64[]
-    fail_rate = Float64[]
-    sensitivity = Float64[]
-    specificity = Float64[]
-    VPP = Float64[]
-    VPN = Float64[]
-    F1 = Float64[]
-
-    # Pasos únicos para crear una RNA
-    # One-hot-encoding del vector de salidas deseadas
-    targets_onehot = oneHotEncoding(targets)
-    
+    acc, fail_rate, sensitivity, specificity, VPP, VPN, F1 = [], [], [], [], [], [], []
     # Realizar la validación cruzada
     for fold in 1:numFolds
         
@@ -640,15 +633,14 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
         test_indices = findall(x -> x == fold, crossValidationIndices)
 
         train_inputs = inputs[:, train_indices]
-        train_targets = targets_onehot[:, train_indices]
-
+        # Mirarlo
+        train_targets = targets_onehot[train_indices]
         test_inputs = inputs[:, test_indices]
-        test_targets = targets_onehot[:, test_indices]
-
-
+        test_targets = targets_onehot[test_indices]
         # Bucle para repetir el entrenamiento dentro del fold
+        acc_fold, errorRate_fold, sensitivity_fold, specificity_fold, VPP_fold, VPN_fold, F1_fold = [], [], [], [], [], [], []
+
         for _ in 1:numExecutions
-             
             # Entrenar la red neuronal
             if validationRatio > 0
                 # Determinar el tamaño del conjunto de validación
@@ -658,11 +650,8 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
                 validationRatio = (size_train * validationRatio) / total_size
                 P = (1 - validationRatio)
                 N = size_train
-
-                # Obtener los índices para el conjunto de validación
                 validation_indices = holdOut(N, P)
-                
-                # Conjunto de validación
+
                 validation_inputs = train_inputs[:, validation_indices]
                 validation_targets = train_targets[:, validation_indices]
 
@@ -683,11 +672,11 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
                     learningRate=learningRate,
                     maxEpochsVal=maxEpochsVal)
             end 
-            # Evaluar la red neuronal con el conjunto de prueba
-            confusion_matrix = confusionMatrix(ann_trained[1](test_inputs), test_targets)
 
-            # Coger las  métricas y almacenarlas en los vectores correspondientes
-            push!(precision, confusion_matrix[1])
+            test_ann = ann_trained[4]
+            confusion_matrix = confusionMatrix(classifyOutputs(test_ann), test_targets)
+
+            push!(acc, confusion_matrix[1])
             push!(fail_rate, confusion_matrix[2])
             push!(sensitivity, confusion_matrix[3])
             push!(specificity, confusion_matrix[4])
@@ -696,9 +685,8 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
             push!(F1, confusion_matrix[7])
         end
     end
-
     # Calcular medias y desviaciones estándar de las métricas de todos los folds
-    return ((mean(precision), std(precision)), 
+    return ((mean(acc), std(acc)), 
             (mean(errorRate), std(errorRate)), 
             (mean(sensitivity), std(sensitivity)), 
             (mean(specificity), std(specificity)), 
@@ -709,10 +697,7 @@ end;
 
 # PARTE 12
 # --------------------------------------------------------------------------
-using ScikitLearn
-@sk_import svm: SVC
-@sk_import tree: DecisionTreeClassifier
-@sk_import neighbors: KNeighborsClassifier 
+
 
 function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
                               inputs::AbstractArray{<:Real,2}, targets::AbstractArray{<:Any,1},

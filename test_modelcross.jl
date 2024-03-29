@@ -29,8 +29,6 @@ println("VPP media: ", results_svm[5])
 println("VPN media: ", results_svm[6])
 println("F1 media: ", results_svm[7])
 
-
-
 #Ejemplo arboldecision:
 
 # Definimos los hiperparámetros del modelo Árbol de decisión
