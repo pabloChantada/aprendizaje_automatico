@@ -351,7 +351,13 @@ normalizeMinMax!(inputs_test, (min_vals, max_vals))
 # --------------------------------------------------------------------------
 # Entrenar distintas arquitecturas y sacar gráficas de cómo ha sido la evolución de los valores de loss de entrenamiento, validación y 
 # test en la misma gráfica, incluyendo el ciclo 0
-topology = [5, 7, 2]
+topology = [2, 3, 2, 4, 1]
+best_model, train_losses, val_losses, test_losses = trainClassANN(
+        topology, (inputs_train, targets_train),
+        validationDataset=(inputs_val, targets_val),
+        testDataset=(inputs_test, targets_test),
+    )
+
 best_model, train_losses, val_losses, test_losses = trainClassANN(
     topology, (inputs_train, targets_train),
     validationDataset=(inputs_val, targets_val),

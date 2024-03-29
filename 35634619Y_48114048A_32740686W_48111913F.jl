@@ -13,6 +13,7 @@ using DelimitedFiles;
 using Statistics;
 using Random;
 using ScikitLearn;
+using LinearAlgebra;
 
 # PARTE 1
 # --------------------------------------------------------------------------
@@ -237,28 +238,18 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
      
     
     # Separamos los datos de los datasets
-    inputs_train, targets_train = trainingDataset
-    inputs_val, targets_val = validationDataset
-    inputs_test, targets_test = testDataset
+    inputs_train = trainingDataset[1]
+    targets_train = trainingDataset[2]
+    inputs_val = validationDataset[1]
+    targets_val = validationDataset[2]
+    inputs_test = testDataset[1]
+    targets_test = testDataset[2]
 
-    println("Inputs Train: ", size(inputs_train))
-    println("Targets Train: ", size(targets_train))
-    println("Inputs Val: ", size(inputs_val))
-    println("Targets Val: ", size(targets_val))
-    println("Inputs Test: ", size(inputs_test))
-    println("Targets Test: ", size(targets_test))
+    # Si falla es posiblemente por la diferencia de tamaño entre validaiton/test y train
+    # Si tienen el mismo tamaño funciona, con distinto falla
 
-    # Transponemos los datos para poder usarlos con Flux
-    inputs_train = transpose(inputs_train)
-    targets_train = transpose(targets_train)
-    inputs_val = transpose(inputs_val)
-    targets_val = transpose(targets_val)
-    inputs_test = transpose(inputs_test)
-    targets_test = transpose(targets_test)
-    
-    
     # Creamos la RNA:
-    ann = buildClassANN(size(inputs_train,1), topology, size(targets_train,1); transferFunctions=transferFunctions)
+    ann = buildClassANN(size(inputs_train,2), topology, size(targets_train,2); transferFunctions=transferFunctions)
 
     # Creamos loss, función que calcula la pérdida de la red neuronal durante el entrenamiento. (la del enunciado)
     loss(model, x, y) = (size(y, 1) == 1) ? Losses.binarycrossentropy(model(x), y) : Losses.crossentropy(model(x), y)
@@ -277,9 +268,9 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     val_losses = Float64[]
     test_losses = Float64[]
     
-    train_loss = loss(ann, inputs_train, targets_train)
-    val_loss = loss(ann, inputs_val, targets_val)
-    test_loss = loss(ann, inputs_test, targets_test)
+    train_loss = loss(ann, inputs_train', targets_train')
+    val_loss = loss(ann, inputs_val', targets_val')
+    test_loss = loss(ann, inputs_test', targets_test')
     
     push!(train_losses, train_loss)
     push!(val_losses, val_loss)
@@ -289,14 +280,13 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
 
         #Iniciamos el entrenamiento.
         # MIRAR AQUI
-        Flux.train!(loss, ann, [(inputs_train, targets_train)], opt_state)
+        Flux.train!(loss, ann, [(inputs_train', targets_train')], opt_state)
         
         # Calculamos los valores de pérdida de cada conjunto.
-        # MIRAR AQUI
-        train_loss = loss(ann, inputs_train, targets_train)
-        val_loss = loss(ann, inputs_val, targets_val)
-        test_loss = loss(ann, inputs_test, targets_test)
-        
+        train_loss = loss(ann, inputs_train', targets_train')
+        val_loss = loss(ann, inputs_val', targets_val')
+        test_loss = loss(ann, inputs_test', targets_test')
+
         # Llevamos los datos recogidos a su vector correspondiente mediante push.
         push!(train_losses, train_loss)
         push!(val_losses, val_loss)
@@ -452,83 +442,71 @@ end;
 function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
     # outputs = matriz de salidas
     # targets = matriz de salidas deseadas
-    @assert size(outputs, 2) != 2 && size(outputs, 2) == size(targets, 2) "Las matrices deben tener el mismo número de columnas y no pueden tener una dimensión de 2 (caso binario)"
+    @assert size(outputs, 2) == size(targets, 2) && size(outputs, 2) != 2 "Las matrices deben tener el mismo número de columnas y no pueden tener una dimensión de 2 (caso binario)"
+    # Caso binario
     if size(outputs, 2) == 1
-        acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix = confusionMatrix(outputs, targets)
+        acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix = confusionMatrix(vec(outputs), vec(targets))
         @assert (all([in(output, unique(targets)) for output in outputs])) "Las salidas no estan en las clases deseadas"
         return acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix
+    # Caso multiclase
     else 
-        sensitivity = zeros(size(outputs, 2))
-        specificity = zeros(size(outputs, 2))
-        positive_predictive_value = zeros(size(outputs, 2))
-        negative_predictive_value = zeros(size(outputs, 2))
-        f_score = zeros(size(outputs, 2))
+        sensitivities = zeros(Float64, size(outputs, 2))
+        specificities = zeros(Float64, size(outputs, 2))
+        ppvs = zeros(Float64, size(outputs, 2)) # Positive Predictive Values
+        npvs = zeros(Float64, size(outputs, 2)) # Negative Predictive Values
+        f1s = zeros(Float64, size(outputs, 2))
         
         for i = 1:(size(outputs, 2))
             #matrix_accuracy, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix
-            _, _, sensitivity[i], specificity[i], positive_predictive_value[i], negative_predictive_value[i], f_score[i], _ = confusionMatrix(outputs[:,i], targets[:,i])
+            _, _, sensitivities[i], specificities[i], ppvs[i], npvs[i], f1s[i], _ = confusionMatrix(outputs[:,i], targets[:,i])
         end       
-        # esto esta mal
-        # Define the unique classes
 
-        # Create the confusion matrix
-        matrix = zeros(Int, size(outputs, 2), size(outputs, 2))
-        println(matrix)
-        for real in size(outputs, 2)
-            for predicted in (targets, 2)
-                if real == predicted
-                    matrix[real, predicted] = sum((outputs .== real) .& (targets .== predicted))
-                else
-                    matrix[real, predicted] = sum((outputs .== real) .& (targets .== predicted))
-                end
-            end
-        end
+        confusion_matrix = [sum((outputs[:, i] .& targets[:, j])) for i in 1:(size(outputs, 2)), j in 1:(size(targets, 2))]
 
+        # Unificar métricas usando estrategia macro o weighted
+        # accuracy = sum(diag(confusion_matrix, 0)) / sum(confusion_matrix)
+        acc = accuracy(outputs, targets)
+        error_rate = 1 - acc
+        
+        # Calcular instacias de cada clase -> sum(targets, dims=1) = [clase1, clase2, ...]
+        # vec(sum(targets, dims=1)) = [clase1, clase2, ...]
+        # Sensivlidad1 * instancias1 + Sensibilidad2 * instancias2 + ... / total instancias
         if weighted
-            acc = accuracy(outputs, targets)
-            fail_rate = 1 - acc
-            weighted_sensitivity = sum(sensitivity .* size(outputs, 2)) / length(sensitivity)
-            weighted_specificity = sum(specificity.* size(outputs, 2)) / length(specificity)
-            weighted_positive_predictive_value = sum(positive_predictive_value.* size(outputs, 2)) / length(positive_predictive_value)
-            weighted_negative_predictive_value = sum(negative_predictive_value.* size(outputs, 2)) / length(negative_predictive_value)
-            weighted_f_score = sum(f_score.* size(outputs, 2)) / length(f_score)
-            @assert (all([in(output, unique(targets)) for output in outputs])) "Error: Los valores de salida no están en el conjunto de valores posibles de salida."
-            return (acc, fail_rate, weighted_sensitivity, weighted_specificity, weighted_positive_predictive_value, weighted_negative_predictive_value, weighted_f_score, matrix)
+            # Calcula el total de instancias por clase
+            class_weights = sum(targets, dims=1)[:] / sum(targets)
+            
+            # Calcula métricas ponderadas
+            # Posiblemente esto este mal
+            sensitivities = sum(sensitivities .* class_weights) / sum(class_weights)
+            specificities = sum(specificities .* class_weights) / sum(class_weights)
+            ppvs = sum(ppvs .* class_weights) / sum(class_weights)
+            npvs = sum(npvs .* class_weights) / sum(class_weights)
+            f1s = sum(f1s .* class_weights) / sum(class_weights)
         else
-            acc = accuracy(outputs, targets)
-            fail_rate = 1 - acc
-            macro_sensitivity = mean(sensitivity)
-            macro_specificity = mean(specificity)
-            macro_positive_predictive_value = mean(positive_predictive_value)
-            macro_negative_predictive_value = mean(negative_predictive_value)
-            macro_f_score = mean(f_score)
-            @assert (all([in(output, unique(targets)) for output in outputs])) "Error: Los valores de salida no están en el conjunto de valores posibles de salida."
-            return (acc, fail_rate, macro_sensitivity, macro_specificity, macro_positive_predictive_value, macro_negative_predictive_value, macro_f_score, matrix)
+            sensitivities = mean(sensitivities)
+            specificities = mean(specificities)
+            ppvs = mean(ppvs)
+            npvs = mean(npvs)
+            f1s = mean(f1s)
         end
-        return matrix
-
+        return acc, error_rate, sensitivities, specificities, ppvs, npvs, f1s, confusion_matrix
     end
 end
 
 function confusionMatrix(outputs::AbstractArray{<:Real,2}, targets::AbstractArray{Bool,2}; weighted::Bool=true)
-    #
     new_outputs = classifyOutputs(outputs)
-    confusionMatrix(new_outputs, targets; weighted=weighted)
-    #
+    confusionMatrix(new_outputs, targets, weighted=weighted)
 end;
 
 function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray{<:Any,1}; weighted::Bool=true)
-    #
     @assert length(unique(outputs)) == length(unique(targets)) "Las matrices deben tener las mismas dimensiones"
+    @assert all(in.(outputs, [unique(targets)])) "Todas las clases de 'outputs' deben estar en 'targets'"
 
-    classes_outputs = unique(outputs)
-    classes_targets = unique(targets)
+    classes = unique([outputs; targets])  # Unión de clases únicas en ambos.
 
-    new_outputs = oneHotEncoding(outputs, classes_outputs)
-    new_targets = oneHotEncoding(targets, classes_targets)
-    acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix = confusionMatrix(new_outputs, new_targets; weighted=weighted)
-    return (acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix)
-    #
+    new_outputs = oneHotEncoding(outputs, classes)
+    new_targets = oneHotEncoding(targets, classes)
+    return confusionMatrix(new_outputs, new_targets, weighted=weighted)
 end;
 
 function printConfusionMatrix(outputs::AbstractArray{Bool,2},
@@ -559,10 +537,13 @@ function crossvalidation(N::Int64, k::Int64)
     # N -> numero de patrones
     # k -> numero de particiones
     @assert k >= 1 "Numero de particiones debe ser mayor o igual que 1"
+    #=
+    Necesaria ?
     if N < k
         @warn "Número de patrones es menor que el número de particiones. Devolviendo particiones únicas."
         return collect(1:N)
     end
+    =#
     # Numero de elementos en cada particion
     k_vector = [1:k;]
     # Repetimos el vector k_vector hasta que sea mayor que N
@@ -596,40 +577,36 @@ function crossvalidation(targets::AbstractArray{Bool,2}, k::Int64)
     # Cada elemento indica el subconjunto al que pertenece
 
     @assert k >= 1 "Numero de particiones debe ser mayor o igual que 1"
+    N = size(targets, 1)
+    indices = Vector{Int64}(undef, N)
 
-    index_vector = Vector{Any}(undef, size(targets, 1))
-    for i = 1:(size(targets, 2))
-        # Numero de elementos en cada particion
-        elements = sum(targets[:, i] .== 1)
-        col_positions = crossvalidation(elements, k)
-        #=
-        Aquí, findall(targets[:, i] .== 1) encuentra las posiciones donde el valor en la columna correspondiente de targets es 1, luego se asignan los valores de col_positions a esas posiciones en index_vector.
-        =#
-        index_vector[findall(targets[:, i] .== 1)] .= col_positions
+    for i in 1:(size(targets, 2))
+        class_indices = crossvalidation(sum(targets[:, i]), k)
+        indices[findall(targets[:, i])] = class_indices
     end
-    @assert length(index_vector) == size(targets, 1) "Error en la particion"
-    return index_vector
+    return indices
 end;
 
 function crossvalidation(targets::AbstractArray{<:Any,1}, k::Int64)
-    # Cualquier tipo de dato
     @assert k >= 1 "Numero de particiones debe ser mayor o igual que 1"
-    unique_targets = unique(targets)
-    if length(unique(targets)) >= 2
-        index_vector = crossvalidation(oneHotEncoding(targets), k)
-        return index_vector
-    else
-        index_vector = collect(1:length(targets))
-        for i = 1:(length(unique_targets))
-            elements = sum(targets .== unique_targets[i])
-            col_positions = crossvalidation(elements, k)
-            index_vector[findall(targets .== unique_targets[i])] .= col_positions
-        end
-        @assert length(index_vector) == length(targets) "Error en la particion"
-        return index_vector
+    unique_classes = unique(targets)
+    N = length(targets) 
+    indices = Vector{Int64}(undef, N) 
+
+    for class in unique_classes
+        # True en las posicones donde la clase es igual a la clase actual
+        # Se reinicia en cada iteración, la usamos para asignar los indices a cada clase
+        class_mask = targets .== class
+        # sum(class_mask) -> numero de patrones de la clase actual
+        class_indices = crossvalidation(sum(class_mask), k)
+        # Se asginan los valores de los indices en las instacias de class_mask
+        # que son True
+        indices[class_mask] = class_indices
     end
+    return indices
 end;
 
+# Seguir desde aqui
 function ANNCrossValidation(topology::AbstractArray{<:Int,1},
     inputs::AbstractArray{<:Real,2}, targets::AbstractArray{<:Any,1},
     crossValidationIndices::Array{Int64,1};
@@ -642,19 +619,19 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
     numFolds = maximum(crossValidationIndices)
 
     # Variables para almacenar las métricas
-    precision = Float64[]
-    errorRate = Float64[]
+    # Comunes para cualquier modelo
+    accuracy = Float64[]
+    fail_rate = Float64[]
     sensitivity = Float64[]
     specificity = Float64[]
     VPP = Float64[]
     VPN = Float64[]
     F1 = Float64[]
 
-    #Pasos únicos para crear una RNA
+    # Pasos únicos para crear una RNA
     # One-hot-encoding del vector de salidas deseadas
     targets_onehot = oneHotEncoding(targets)
     
-
     # Realizar la validación cruzada
     for fold in 1:numFolds
         
@@ -673,12 +650,10 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
         for _ in 1:numExecutions
              
             # Entrenar la red neuronal
-            
             if validationRatio > 0
                 # Determinar el tamaño del conjunto de validación
                 total_size = size(inputs, 2) + size(targets_onehot, 2)
                 size_train = size(train_inputs, 2)
-
 
                 validationRatio = (size_train * validationRatio) / total_size
                 P = (1 - validationRatio)
@@ -708,59 +683,29 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
                     learningRate=learningRate,
                     maxEpochsVal=maxEpochsVal)
             end 
-            
-            
             # Evaluar la red neuronal con el conjunto de prueba
             confusion_matrix = confusionMatrix(ann_trained[1](test_inputs), test_targets)
 
-        
             # Coger las  métricas y almacenarlas en los vectores correspondientes
-            acc = confusion_matrix[1]
-            fail_rate = confusion_matrix[2]
-            sensitivity_values = confusion_matrix[3]
-            specificity_values = confusion_matrix[4]
-            positive_predictive_value = confusion_matrix[5]
-            negative_predictive_value = confusion_matrix[6]
-            f_score = confusion_matrix[7]
-
-            push!(precision, acc)
-            push!(errorRate, fail_rate)
-            push!(sensitivity, sensitivity_values)
-            push!(specificity, specificity_values)
-            push!(VPP, positive_predictive_value)
-            push!(VPN, negative_predictive_value)
-            push!(F1, f_score)
+            push!(precision, confusion_matrix[1])
+            push!(fail_rate, confusion_matrix[2])
+            push!(sensitivity, confusion_matrix[3])
+            push!(specificity, confusion_matrix[4])
+            push!(VPP, confusion_matrix[5])
+            push!(VPN, confusion_matrix[6])
+            push!(F1, confusion_matrix[7])
         end
     end
 
     # Calcular medias y desviaciones estándar de las métricas de todos los folds
-    precision_mean = mean(precision)
-    precision_std = std(precision)
-    errorRate_mean = mean(errorRate)
-    errorRate_std = std(errorRate)
-    sensitivity_mean = mean(sensitivity)
-    sensitivity_std = std(sensitivity)
-    specificity_mean = mean(specificity)
-    specificity_std = std(specificity)
-    VPP_mean = mean(VPP)
-    VPP_std = std(VPP)
-    VPN_mean = mean(VPN)
-    VPN_std = std(VPN)
-    F1_mean = mean(F1)
-    F1_std = std(F1)
-
-
-    return ((precision_mean, precision_std), 
-            (errorRate_mean, errorRate_std), 
-            (sensitivity_mean, sensitivity_std), 
-            (specificity_mean, specificity_std), 
-            (VPP_mean, VPP_std), 
-            (VPN_mean, VPN_std), 
-            (F1_mean, F1_std))
+    return ((mean(precision), std(precision)), 
+            (mean(errorRate), std(errorRate)), 
+            (mean(sensitivity), std(sensitivity)), 
+            (mean(specificity), std(specificity)), 
+            (mean(VPP), std(VPP)), 
+            (mean(VPN), std(VPN)), 
+            (mean(F1), std(F1)))
 end;
-
-
-
 
 # PARTE 12
 # --------------------------------------------------------------------------
