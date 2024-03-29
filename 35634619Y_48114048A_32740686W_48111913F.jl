@@ -14,7 +14,7 @@ using Statistics;
 using Random;
 using ScikitLearn;
 using LinearAlgebra;
-using ScikitLearn
+using ScikitLearn: fit!, predict;
 @sk_import svm: SVC
 @sk_import tree: DecisionTreeClassifier
 @sk_import neighbors: KNeighborsClassifier 
@@ -705,15 +705,9 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
         targets = string.(targets)
 
         # Creamos vectores para almacenar los resultados de las métricas en cada fold
-        precision = []
-        error_rate = []
-        sensitivity = []
-        specificity = []
-        VPP = []
-        VPN = []
-        F1 = []
-
+        acc, fail_rate, sensitivity, specificity, VPP, VPN, F1 = [], [], [], [], [], [], []
         # Comenzamos la validación cruzada
+        # for fold in unique(crossValidationIndices)
         for test_indices in crossValidationIndices
             # Obtenemos los índices de entrenamiento
             train_indices = filter(x -> !(x in test_indices), 1:size(inputs, 1))
@@ -727,6 +721,7 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
             test_targets = targets[test_indices]
 
             # Creamos el modelo según el tipo especificado
+            model = nothing
             if modelType == :SVC
                 model = SVC(C=modelHyperparameters["C"], kernel=modelHyperparameters["kernel"],
                             degree=modelHyperparameters["degree"], gamma=modelHyperparameters["gamma"],
@@ -738,41 +733,27 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
             end
 
             # Entrenamos el modelo
-                model = fit!(model, train_inputs, train_targets)
-
-            # Realizamos predicciones en el conjunto de prueba
-            predictions = model(test_inputs)
-
-            # Calculamos la matriz de confusión y métricas
-            cm = confusionMatrix(test_targets, predictions)
-            push!(precision, cm[1])
-            push!(error_rate, cm[2])
-            push!(sensitivity, cm[3])
-            push!(specificity, cm[4])
-            push!(VPP, cm[5])
-            push!(VPN, cm[6])
-            push!(F1, cm[7])
+            model = fit!(model, train_inputs, train_targets)
+            # Problema aqui
+            test_inputs = reshape(test_inputs, 1, :)  # Convierte a 1 fila y múltiples columnas
+            predictions = predict(model, test_inputs)
+            # ni puta idea de que es un array{String, 0} tbh
+            metrics = confusionMatrix(test_targets, predictions)
+            push!(acc, metrics[1])
+            push!(fail_rate, metrics[2])
+            push!(sensitivity, metrics[3])
+            push!(specificity, metrics[4])
+            push!(VPP, metrics[5])
+            push!(VPN, metrics[6])
+            push!(F1, metrics[7])
         end
-
-        # Calculamos la media y desviación estándar de las métricas en todos los folds
-        mean_precision = mean(precision)
-        std_precision = std(precision)
-        mean_error_rate = mean(error_rate)
-        std_error_rate = std(error_rate)
-        mean_sensitivity = mean(sensitivity)
-        std_sensitivity = std(sensitivity)
-        mean_specificity = mean(specificity)
-        std_specificity = std(specificity)
-        mean_VPP = mean(VPP)
-        std_VPP = std(VPP)
-        mean_VPN = mean(VPN)
-        std_VPN = std(VPN)
-        mean_F1 = mean(F1)
-        std_F1 = std(F1)
-
         # Devolvemos los resultados como una tupla de tuplas
-        return ((mean_precision, std_precision), (mean_error_rate, std_error_rate),
-                (mean_sensitivity, std_sensitivity), (mean_specificity, std_specificity),
-                (mean_VPP, std_VPP), (mean_VPN, std_VPN), (mean_F1, std_F1))
+        return ((mean(acc), std(acc)), 
+                (mean(fail_rate), std(fail_rate)),
+                (mean(sensitivity), std(sensitivity)), 
+                (mean(specificity), std(specificity)),
+                (mean(VPP), std(VPP)), 
+                (mean(VPN), std(VPN)), 
+                (mean(F1), std(F1)))
     end
 end
