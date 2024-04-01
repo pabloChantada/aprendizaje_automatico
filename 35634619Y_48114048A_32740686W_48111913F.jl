@@ -230,6 +230,8 @@ end;
 
 #PARTE 8 - 
 # --------------------------------------------------------------------------
+
+# El unico fallo que se me ocurre es en el tamaño de los vectores pero no deberia importar creo
 function trainClassANN(topology::AbstractArray{<:Int,1},
     trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
     validationDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}=
@@ -248,6 +250,15 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     targets_val = validationDataset[2]
     inputs_test = testDataset[1]
     targets_test = testDataset[2]
+
+    # Se trasponen las matrices para que las columnas sean los patrones y las filas las características.
+    # Y crear la RNA con los datos de entrada.
+    inputs_train = transpose(inputs_train)
+    targets_train = transpose(targets_train)
+    inputs_val = transpose(inputs_val)
+    targets_val = transpose(targets_val)
+    inputs_test = transpose(inputs_test)
+    targets_test = transpose(targets_test)
 
     # Si falla es posiblemente por la diferencia de tamaño entre validaiton/test y train
     # Si tienen el mismo tamaño funciona, con distinto falla
@@ -272,9 +283,22 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     val_losses = Float64[]
     test_losses = Float64[]
     
-    train_loss = loss(ann, inputs_train', targets_train')
-    val_loss = loss(ann, inputs_val', targets_val')
-    test_loss = loss(ann, inputs_test', targets_test')
+    # Volvemos a trasponerlas 
+    if trainingDataset[1] != Array{eltype(trainingDataset[1]),2}(undef,0,0)
+        train_loss = loss(ann, inputs_train', targets_train')
+    else
+        train_loss = 0
+    end
+    if validationDataset[1] != Array{eltype(trainingDataset[1]),2}(undef,0,0)
+        val_loss = loss(ann, inputs_val', targets_val')
+    else
+        val_loss = 0
+    end
+    if testDataset[1] != Array{eltype(trainingDataset[1]),2}(undef,0,0)
+        test_loss = loss(ann, inputs_test', targets_test')
+    else
+        test_loss = 0
+    end
     
     push!(train_losses, train_loss)
     push!(val_losses, val_loss)
@@ -283,13 +307,24 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     while epoch < maxEpochs && val_loss > minLoss
 
         #Iniciamos el entrenamiento.
-        # MIRAR AQUI
         Flux.train!(loss, ann, [(inputs_train', targets_train')], opt_state)
         
         # Calculamos los valores de pérdida de cada conjunto.
-        train_loss = loss(ann, inputs_train', targets_train')
-        val_loss = loss(ann, inputs_val', targets_val')
-        test_loss = loss(ann, inputs_test', targets_test')
+        if trainingDataset[1] != Array{eltype(trainingDataset[1]),2}(undef,0,0)
+            train_loss = loss(ann, inputs_train', targets_train')
+        else
+            train_loss = 0
+        end
+        if validationDataset[1] != Array{eltype(trainingDataset[1]),2}(undef,0,0)
+            val_loss = loss(ann, inputs_val', targets_val')
+        else
+            val_loss = 0
+        end
+        if testDataset[1] != Array{eltype(trainingDataset[1]),2}(undef,0,0)
+            test_loss = loss(ann, inputs_test', targets_test')
+        else
+            test_loss = 0
+        end
 
         # Llevamos los datos recogidos a su vector correspondiente mediante push.
         push!(train_losses, train_loss)

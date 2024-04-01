@@ -1,7 +1,10 @@
+using Test
+include("35634619Y_48114048A_32740686W_48111913F.jl")
+
 function test_ANNCrossValidation()
     # Crear datos de prueba
     topology = [2, 2, 1]
-    inputs = [0 0; 0 1; 1 0; 1 1]'
+    inputs = [0 0; 0 1; 1 0; 1 1]
     targets = [1, 0, 0, 0, 1, 1, 0]
     crossValidationIndices = [1, 2, 1, 2]  # Solo para este ejemplo, debes proporcionar tus propios índices de validación cruzada
 
@@ -40,15 +43,3 @@ end
 
 # Ejecutar las pruebas
 test_ANNCrossValidation()
-
-
-
-include("35634619Y_48114048A_32740686W_48111913F.jl")
-
-using Test
-
-try
-    test_ANNCrossValidation()
-catch err
-    show(err)
-end
