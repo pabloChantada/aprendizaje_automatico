@@ -484,29 +484,33 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
     @assert size(outputs, 2) == size(targets, 2) && size(outputs, 2) != 2 "Las matrices deben tener el mismo número de columnas y no pueden tener una dimensión de 2 (caso binario)"
     # Caso binario
     if size(outputs, 2) == 1
-        acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix = confusionMatrix(vec(outputs), vec(targets))
         @assert (all([in(output, unique(targets)) for output in outputs])) "Las salidas no estan en las clases deseadas"
-        return acc, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix
-    # Caso multiclase
+        return confusionMatrix(vec(outputs), vec(targets))
     else 
-        sensitivities = zeros(Float64, size(outputs, 2))
-        specificities = zeros(Float64, size(outputs, 2))
-        ppvs = zeros(Float64, size(outputs, 2)) # Positive Predictive Values
-        npvs = zeros(Float64, size(outputs, 2)) # Negative Predictive Values
-        f1s = zeros(Float64, size(outputs, 2))
+        # Inicializar vectores de métricas
+        num_classes = size(outputs, 2)
+        sensitivities = zeros(Float64, num_classes)
+        specificities = zeros(Float64, num_classes)
+        ppvs = zeros(Float64, num_classes)
+        npvs = zeros(Float64, num_classes)
+        f1s = zeros(Float64, num_classes)
         
-        for i = 1:(size(outputs, 2))
-            #matrix_accuracy, fail_rate, sensitivity, specificity, positive_predictive_value, negative_predictive_value, f_score, matrix
-            _, _, sensitivities[i], specificities[i], ppvs[i], npvs[i], f1s[i], _ = confusionMatrix(outputs[:,i], targets[:,i])
-        end       
+        for i in 1:num_classes
+            # Call the confusionMatrix function with the columns corresponding to the current class
+            _, _, sensitivities[i], specificities[i], ppvs[i], npvs[i], f1s[i], _ = confusionMatrix(outputs[:, i], targets[:, i])
+        end
+        
+        confusion_matrix = zeros(Int, num_classes, num_classes)
+        # Create the confusion matrix
+        for i in 1:num_classes
+            for j in 1:num_classes
+                confusion_matrix[i, j] = sum((outputs[:, i] .== true) .& (targets[:, j] .== true))
+            end
+        end
 
-        confusion_matrix = [sum((outputs[:, i] .& targets[:, j])) for i in 1:(size(outputs, 2)), j in 1:(size(targets, 2))]
-
-        # Unificar métricas usando estrategia macro o weighted
-        # accuracy = sum(diag(confusion_matrix, 0)) / sum(confusion_matrix)
+        # Calcular precisión y tasa de fallo
         acc = accuracy(outputs, targets)
-        error_rate = 1 - acc
-        
+        fail_rate = 1 - acc
         # Calcular instacias de cada clase -> sum(targets, dims=1) = [clase1, clase2, ...]
         # vec(sum(targets, dims=1)) = [clase1, clase2, ...]
         # Sensivlidad1 * instancias1 + Sensibilidad2 * instancias2 + ... / total instancias
@@ -528,7 +532,7 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
             npvs = mean(npvs)
             f1s = mean(f1s)
         end
-        return acc, error_rate, sensitivities, specificities, ppvs, npvs, f1s, confusion_matrix
+        return acc, fail_rate, sensitivities, specificities, ppvs, npvs, f1s, confusion_matrix
     end
 end
 
@@ -550,9 +554,14 @@ end;
 
 function printConfusionMatrix(outputs::AbstractArray{Bool,2},
     targets::AbstractArray{Bool,2}; weighted::Bool=true)
-    matrix = confusionMatrix(outputs, targets; weighted=weighted)
-    println("Matriz de confusión: \n")
-    println(matrix)
+    matrix = confusionMatrix(outputs, targets; weighted=weighted)[8]
+    num_classes = size(matrix, 1)
+    for i in 1:num_classes
+        for j in 1:num_classes
+            print(confusion_matrix[i, j], " ")
+        end
+        println()
+    end
 end;
 
 function printConfusionMatrix(outputs::AbstractArray{<:Real,2},
