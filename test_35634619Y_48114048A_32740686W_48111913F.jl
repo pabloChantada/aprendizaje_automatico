@@ -1,121 +1,127 @@
-
-#=
-
-n_samples = 30
-outputs = rand(1:3, n_samples)
-targets = rand(1:3, n_samples)
-
-confusion_matrix = [
-    sum(Bool(outputs[i] == predicted_class) & Bool(targets[i] == actual_class) for i in 1:n_samples)
-    for actual_class in 1:3, predicted_class in 1:3
-]
-
-# conf_matrix = confusmat(3, outputs, targets) # Aquí, 3 indica el número de clases
-acc, fail_rate, sensitivities, specificities, ppvs, npvs, f1s, confusion_matrix = confusionMatrix(outputs, targets)
-
-num_classes = size(confusion_matrix, 1)
-for i in 1:num_classes
-    for j in 1:num_classes
-        print(confusion_matrix[i, j], " ")
-    end
-    println()
-end
-=#
-# Test case for binary classification
-
-
-# Mock data
+using Test
 include("35634619Y_48114048A_32740686W_48111913F.jl")
-using Test;
+@testset "modelCrossValidation tests" begin
+    # Test case for ANNCrossValidation
+    #=
+    @testset "ANNCrossValidation" begin
+        topology = [2, 2, 1]
+        inputs = [0 0; 0 1; 1 0; 1 1]
+        targets = [1, 0, 0, 0, 1, 1, 0]
+        crossValidationIndices = [1, 2]
 
+        results = modelCrossValidation(:ANN, Dict("topology" => topology), inputs, targets, crossValidationIndices)
 
-# This setup results in:
-# Class 1: 1 TP, 1 FN, 1 FP (Prediction correct for 1 instance, 1 misclassified as Class 2, 1 instance from Class 2 misclassified as Class 1)
-# Class 2: 1 TP, 1 FN, 1 FP
-# Class 3: 2 TP, 0 FN, 0 FP
-# Expected confusion matrix:
-# 1 1 0
-# 1 1 0
-# 0 0 2
-using MLBase
+        @test length(results) == 7
+        @test all(length(r) == 2 for r in results)
+        @test !isnan(results[1][1])
+        @test !isnan(results[2][1])
+        @test !isnan(results[3][1])
+        @test !isnan(results[4][1])
+        @test !isnan(results[5][1])
+        @test !isnan(results[6][1])
+        @test !isnan(results[7][1])
+        @test !isnan(results[1][2])
+        @test !isnan(results[2][2])
+        @test !isnan(results[3][2])
+        @test !isnan(results[4][2])
+        @test !isnan(results[5][2])
+        @test !isnan(results[6][2])
+        @test !isnan(results[7][2])
+        @test results[1][2] >= 0
+        @test results[2][2] >= 0
+        @test results[3][2] >= 0
+        @test results[4][2] >= 0
+        @test results[5][2] >= 0
+        @test results[6][2] >= 0
+        @test results[7][2] >= 0
+    end
+    =#
+    # Test case for other models
+    @testset "Other models" begin
+        inputs = [1 2; 3 4; 5 6; 7 8]
+        targets = [1, 0, 1, 0]
+        crossValidationIndices = [1, 2]
 
-function test_confusionMatrix_case1()
-    outputs = [true false false; false true false; false false true; true false false; false true false; false false true]
-    targets = [true false false; false true false; false false true; false true false; true false false; false false true]
-    _,_,_,_,_,_,_,confusion_matrix = confusionMatrix(outputs, targets)
-    @test confusion_matrix == [1 1 0; 1 1 0; 0 0 2]
+        # Test case for SVC
+        @testset "SVC" begin
+            modelHyperparameters = Dict("C" => 1.0, "kernel" => "linear", "degree" => 3, "gamma" => "auto", "coef0" => 0.0)
+            results = modelCrossValidation(:SVC, modelHyperparameters, inputs, targets, crossValidationIndices)
+
+            # Add assertions for the results of SVC model
+        end
+
+        # Test case for DecisionTreeClassifier
+        @testset "DecisionTreeClassifier" begin
+            modelHyperparameters = Dict("max_depth" => 3)
+            results = modelCrossValidation(:DecisionTreeClassifier, modelHyperparameters, inputs, targets, crossValidationIndices)
+
+            # Add assertions for the results of DecisionTreeClassifier model
+        end
+
+        # Test case for KNeighborsClassifier
+        @testset "KNeighborsClassifier" begin
+            modelHyperparameters = Dict("n_neighbors" => 3)
+            results = modelCrossValidation(:KNeighborsClassifier, modelHyperparameters, inputs, targets, crossValidationIndices)
+
+            # Add assertions for the results of KNeighborsClassifier model
+        end
+    end
 end
 
-function test_confusionMatrix_case2()
-    outputs = Bool[true false true; false true true; false true true]
-    targets = Bool[true false true; false true true; false true true]
-    weighted = true
-    acc, fail_rate, sensitivities, specificities, ppvs, npvs, f1s, confusion_matrix = confusionMatrix(outputs, targets, weighted=weighted)
-    @test acc == 1.0
-    @test fail_rate == 0.0
-    @test all(sensitivities .== 1.0)
-    @test all(specificities .== 1.0)
-    @test all(ppvs .== 1.0)
-    @test all(npvs .== 1.0)
-    @test all(f1s .== 1.0)
-    num_classes = size(confusion_matrix, 1)
-    for i in 1:num_classes
-        for j in 1:num_classes
-            print(confusion_matrix[i, j], " ")
-        end
-        println()
-    end
-    x  = [1 0 0; 0 1 0; 0 0 1]
-    num_classes = size(x, 1)
-    for i in 1:num_classes
-        for j in 1:num_classes
-            print(x[i, j], " ")
-        end
-        println()
-    end
-    @test confusion_matrix == x
 
-end
+    # Convertimos el vector de salidas deseada a texto para evitar errores con la librería de Python
+    targets = string.(targets)
 
-function test_confusionMatrix_case3()
-    outputs = Bool[true false true; 
-                    true false true; 
-                    false true true]
-    targets = Bool[false true false; 
-                    false true false; 
-                    true false false]
-    weighted = false
-    acc, fail_rate, sensitivities, specificities, ppvs, npvs, f1s, confusion_matrix = confusionMatrix(outputs, targets, weighted=weighted)
-    # Expected values would need to be calculated based on your understanding of how your function should handle this case
-    @test acc == 0.0
-    @test fail_rate == 1.0
-    @test all(sensitivities .== 0.0)
-    @test all(specificities .== 0.0)
-    @test all(ppvs .== 0.0)
-    @test all(npvs .== 0.0)
-    @test all(f1s .== 0.0)
-    num_classes = size(confusion_matrix, 1)
-    for i in 1:num_classes
-        for j in 1:num_classes
-            print(confusion_matrix[i, j], " ")
-        end
-        println()
-    end
-    x  = [0 1 0; 
-        1 0 1; 
-        0 0 0]
-    num_classes = size(x, 1)
-    for i in 1:num_classes
-        for j in 1:num_classes
-            print(x[i, j], " ")
-        end
-        println()
-    end
-    @test confusion_matrix == x
-end
+    # Creamos vectores para almacenar los resultados de las métricas en cada fold
+    acc, fail_rate, sensitivity, specificity, VPP, VPN, F1 = [], [], [], [], [], [], []
+    # Comenzamos la validación cruzada
+    # for fold in unique(crossValidationIndices)
+    fold = unique(crossValidationIndices)[1]
+        #for test_indices in crossValidationIndices
+            # Obtenemos los índices de entrenamiento
+            train_indices = filter(x -> !(x in fold), 1:size(inputs, 1))
+            # Convertimos el rango en un vector de índices
+            test_indices = collect(fold)
+        # Dividimos los datos en entrenamiento y prueba
+        train_inputs = inputs[train_indices, :]
+        train_targets = targets[train_indices]
+        test_inputs = inputs[test_indices, :]
+        test_targets = targets[test_index]
 
-@testset "Confusion matrix" begin
-    test_confusionMatrix_case1()
-    test_confusionMatrix_case2()
-    test_confusionMatrix_case3()
+        # Creamos el modelo según el tipo especificado
+        # model = nothing
+        if modelType == :SVC
+            model = SVC(C=modelHyperparameters["C"], kernel=modelHyperparameters["kernel"],
+                        degree=modelHyperparameters["degree"], gamma=modelHyperparameters["gamma"],
+                        coef0=modelHyperparameters["coef0"])
+        elseif modelType == :DecisionTreeClassifier
+            model = DecisionTreeClassifier(max_depth=modelHyperparameters["max_depth"])
+        elseif modelType == :KNeighborsClassifier
+            model = KNeighborsClassifier(n_neighbors=modelHyperparameters["n_neighbors"])
+        end
+
+        # Entrenamos el modelo
+        model = fit!(model, train_inputs, train_targets)
+        # Problema aqui
+        predictions = predict(model, reshape(test_inputs, 1, :))
+        # ni puta idea de que es un array{String, 0} tbh
+        println(predictions)
+        println(test_targets)
+        metrics = confusionMatrix(vec(test_targets), vec(predictions))
+        push!(acc, metrics[1])
+        push!(fail_rate, metrics[2])
+        push!(sensitivity, metrics[3])
+        push!(specificity, metrics[4])
+        push!(VPP, metrics[5])
+        push!(VPN, metrics[6])
+        push!(F1, metrics[7])
+    end
+    # Devolvemos los resultados como una tupla de tuplas
+    return ((mean(acc), std(acc)), 
+            (mean(fail_rate), std(fail_rate)),
+            (mean(sensitivity), std(sensitivity)), 
+            (mean(specificity), std(specificity)),
+            (mean(VPP), std(VPP)), 
+            (mean(VPN), std(VPN)), 
+            (mean(F1), std(F1)))
 end

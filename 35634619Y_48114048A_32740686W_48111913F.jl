@@ -500,8 +500,9 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
             _, _, sensitivities[i], specificities[i], ppvs[i], npvs[i], f1s[i], _ = confusionMatrix(outputs[:, i], targets[:, i])
         end
         
+        # Este es el problema
         confusion_matrix = zeros(Int, num_classes, num_classes)
-        # Create the confusion matrix
+
         for i in 1:num_classes
             for j in 1:num_classes
                 confusion_matrix[i, j] = sum((outputs[:, i] .== true) .& (targets[:, j] .== true))
@@ -544,7 +545,7 @@ end;
 function confusionMatrix(outputs::AbstractArray{<:Any,1}, targets::AbstractArray{<:Any,1}; weighted::Bool=true)
     @assert length(unique(outputs)) == length(unique(targets)) "Las matrices deben tener las mismas dimensiones"
     @assert all(in.(outputs, [unique(targets)])) "Todas las clases de 'outputs' deben estar en 'targets'"
-
+    # da fallo en este assert el modelCrossValidation
     classes = unique([outputs; targets])  # Unión de clases únicas en ambos.
 
     new_outputs = oneHotEncoding(outputs, classes)
@@ -578,7 +579,7 @@ function printConfusionMatrix(outputs::AbstractArray{<:Any,1},
     println(matrix)
 end;
 
-# PARTE 11 - Todo mal
+# PARTE 11
 # --------------------------------------------------------------------------
 
 function crossvalidation(N::Int64, k::Int64)
@@ -665,6 +666,7 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
     
     # Calcular el número de folds
     numFolds = maximum(crossValidationIndices)
+    println(numFolds)
     targets_onehot = oneHotEncoding(targets)
     # Variables para almacenar las métricas
     # Comunes para cualquier modelo
@@ -675,44 +677,53 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
         train_indices = findall(i -> i != fold, crossValidationIndices)
         test_indices = findall(x -> x == fold, crossValidationIndices)
 
+        # crossValidation indices tiene que ser menor que el numero de columnas?
         train_inputs = inputs[:, train_indices]
-        train_targets = targets_onehot[train_indices]
+        train_targets = reshape(targets_onehot[train_indices], 1, :)
         test_inputs = inputs[:, test_indices]
-        test_targets = targets_onehot[test_indices]
+        test_targets = reshape(targets_onehot[test_indices], 1, :)
+
         for _ in 1:numExecutions
             # Entrenar la red neuronal
             if validationRatio > 0
                 # Determinar el tamaño del conjunto de validación
+                # N = lenght(train_indices)
+                # (train_idx, val_idx) = holdOut(N, validationRatio)
+
                 total_size = size(inputs, 2) + size(targets_onehot, 2)
                 size_train = size(train_inputs, 2)
 
                 validationRatio = (size_train * validationRatio) / total_size
                 P = (1 - validationRatio)
                 N = size_train
-                validation_indices = holdOut(N, P)
+                # FALLA DESDE AQUI
+                (train_idx, val_idx) = holdOut(N, P)
 
-                validation_inputs = train_inputs[:, validation_indices]
-                validation_targets = train_targets[:, validation_indices]
+                # Seleccionar conjuntos de entrenamiento y validación
+                validation_inputs = train_inputs[:, val_idx]
+                validation_targets = reshape(train_targets[val_idx], 1, :)
 
-
-                train_inputs, validation_inputs = holdOut
-                ann_trained = trainClassANN(topology, (train_inputs, train_targets),
-                    validationDataset=(validation_inputs, validation_targets), testDataset=(test_inputs, test_targets),
-                    transferFunctions=transferFunctions,
-                    maxEpochs=maxEpochs, minLoss=minLoss,
-                    learningRate=learningRate,
-                    maxEpochsVal=maxEpochsVal)
-            else
+                train_inputs_adj = train_inputs[:, train_idx]
+                train_targets_adj = reshape(train_targets[train_idx], 1, :)
                 
+                # Entrenar con conjuntos ajustados
+                ann_trained = trainClassANN(topology, (train_inputs_adj, train_targets_adj),
+                                            validationDataset=(validation_inputs, validation_targets), testDataset=(test_inputs, test_targets),
+                                            transferFunctions=transferFunctions,
+                                            maxEpochs=maxEpochs, minLoss=minLoss,
+                                            learningRate=learningRate,
+                                            maxEpochsVal=maxEpochsVal)
+            else
                 ann_trained = trainClassANN(topology, (train_inputs, train_targets),
-                    validationDataset=(train_inputs, train_targets), testDataset=(test_inputs, test_targets),
-                    transferFunctions=transferFunctions,
-                    maxEpochs=maxEpochs, minLoss=minLoss,
-                    learningRate=learningRate,
-                    maxEpochsVal=maxEpochsVal)
-            end 
+                                            validationDataset=(train_inputs, train_targets), testDataset=(test_inputs, test_targets),
+                                            transferFunctions=transferFunctions,
+                                            maxEpochs=maxEpochs, minLoss=minLoss,
+                                            learningRate=learningRate,
+                                            maxEpochsVal=maxEpochsVal)
+            end
 
-            confusion_matrix = confusionMatrix(vec(ann_trained[1](test_inputs)), test_targets)
+            # Modificar esto si es necesario que sea multiclase
+            confusion_matrix = confusionMatrix(vec(ann_trained[1](test_inputs)), vec(test_targets))
 
             push!(acc, confusion_matrix[1])
             push!(fail_rate, confusion_matrix[2])
@@ -739,7 +750,7 @@ end;
 function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
                               inputs::AbstractArray{<:Real,2}, targets::AbstractArray{<:Any,1},
                               crossValidationIndices::Array{Int64,1})
-
+    # numFolds = maximum(crossValidationIndices)
     # Verificamos si el modelo a entrenar es una red neuronal
     if modelType == :ANN
         # Llamamos a la función ANNCrossValidation con los hiperparámetros
@@ -752,12 +763,12 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
         acc, fail_rate, sensitivity, specificity, VPP, VPN, F1 = [], [], [], [], [], [], []
         # Comenzamos la validación cruzada
         # for fold in unique(crossValidationIndices)
-        for test_indices in crossValidationIndices
+        for val_idx in crossValidationIndices
             # Obtenemos los índices de entrenamiento
-            train_indices = filter(x -> !(x in test_indices), 1:size(inputs, 1))
+            train_indices = filter(x -> !(x in val_idx), 1:size(inputs, 1))
             # Convertimos el rango en un vector de índices
-            test_indices = collect(test_indices)
-
+            test_indices = collect(val_idx)
+        
             # Dividimos los datos en entrenamiento y prueba
             train_inputs = inputs[train_indices, :]
             train_targets = targets[train_indices]
@@ -765,7 +776,7 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
             test_targets = targets[test_indices]
 
             # Creamos el modelo según el tipo especificado
-            model = nothing
+            # model = nothing
             if modelType == :SVC
                 model = SVC(C=modelHyperparameters["C"], kernel=modelHyperparameters["kernel"],
                             degree=modelHyperparameters["degree"], gamma=modelHyperparameters["gamma"],
@@ -779,10 +790,13 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
             # Entrenamos el modelo
             model = fit!(model, train_inputs, train_targets)
             # Problema aqui
-            test_inputs = reshape(test_inputs, 1, :)  # Convierte a 1 fila y múltiples columnas
-            predictions = predict(model, test_inputs)
+            predictions = predict(model, reshape(test_inputs, 1, :))
             # ni puta idea de que es un array{String, 0} tbh
-            metrics = confusionMatrix(test_targets, predictions)
+            println(predictions)
+            println(test_targets)
+            metrics = confusionMatrix(vec(test_targets), vec(predictions))
+
+
             push!(acc, metrics[1])
             push!(fail_rate, metrics[2])
             push!(sensitivity, metrics[3])

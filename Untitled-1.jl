@@ -10,6 +10,46 @@ using LinearAlgebra;
 using ScikitLearn: fit!, predict;
 include("35634619Y_48114048A_32740686W_48111913F.jl")
 
+# Convertimos el vector de salidas deseada a texto para evitar errores con la librería de Python
+targets = string.(targets)
+# Creamos vectores para almacenar los resultados de las métricas en cada fold
+acc, fail_rate, sensitivity, specificity, VPP, VPN, F1 = [], [], [], [], [], [], []
+# Comenzamos la validación cruzada
+# for fold in unique(crossValidationIndices)
+for test_indices in crossValidationIndices
+    # Obtenemos los índices de entrenamiento
+    train_indices = filter(x -> !(x in test_indices), 1:size(inputs, 1))
+    # Convertimos el rango en un vector de índices
+    test_indices = collect(test_indices)
+
+    # Dividimos los datos en entrenamiento y prueba
+    train_inputs = inputs[train_indices, :]
+    train_targets = targets[train_indices]
+    test_inputs = inputs[test_indices, :]
+    test_targets = targets[test_indices]
+
+    # Creamos el modelo según el tipo especificado
+    # model = nothing
+    if modelType == :SVC
+        model = SVC(C=modelHyperparameters["C"], kernel=modelHyperparameters["kernel"],
+                    degree=modelHyperparameters["degree"], gamma=modelHyperparameters["gamma"],
+                    coef0=modelHyperparameters["coef0"])
+    elseif modelType == :DecisionTreeClassifier
+        model = DecisionTreeClassifier(max_depth=modelHyperparameters["max_depth"])
+    elseif modelType == :KNeighborsClassifier
+        model = KNeighborsClassifier(n_neighbors=modelHyperparameters["n_neighbors"])
+    end
+
+    # Entrenamos el modelo
+    model = fit!(model, train_inputs, train_targets)
+    # Problema aqui
+    test_inputs = reshape(test_inputs, 1, :)  # Convierte a 1 fila y múltiples columnas
+    predictions = predict(model, test_inputs)
+    # ni puta idea de que es un array{String, 0} tbh
+
+
+
+
 function confusionMatrix(outputs::AbstractArray{Bool,1}, targets::AbstractArray{Bool,1})
     # Matrices cuadradadas = clases x clases
     # Muestra la distribucion de los patrones y la clasificacion que hace el modelo

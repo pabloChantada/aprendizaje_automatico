@@ -1,12 +1,11 @@
 using Test
 include("35634619Y_48114048A_32740686W_48111913F.jl")
-
-function test_ANNCrossValidation()
+function testing()
     # Crear datos de prueba
     topology = [2, 2, 1]
     inputs = [0 0; 0 1; 1 0; 1 1]
     targets = [1, 0, 0, 0, 1, 1, 0]
-    crossValidationIndices = [1, 2, 1, 2]  # Solo para este ejemplo, debes proporcionar tus propios índices de validación cruzada
+    crossValidationIndices = [1, 2]  # Solo para este ejemplo, debes proporcionar tus propios índices de validación cruzada
 
     # Ejecutar la función
     results = ANNCrossValidation(topology, inputs, targets, crossValidationIndices)
@@ -40,6 +39,6 @@ function test_ANNCrossValidation()
     @test results[6][2] >= 0
     @test results[7][2] >= 0
 end
-
-# Ejecutar las pruebas
-test_ANNCrossValidation()
+@testset "Testing" begin
+    testing()
+end
