@@ -790,6 +790,7 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
             # Entrenamos el modelo
             model = fit!(model, train_inputs, train_targets)
             # Problema aqui
+            @error "fallo en targets"
             predictions = predict(model, reshape(test_inputs, 1, :))
             # ni puta idea de que es un array{String, 0} tbh
             println(predictions)
