@@ -790,11 +790,13 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
             # Entrenamos el modelo
             model = fit!(model, train_inputs, train_targets)
             # Problema aqui
-            @error "fallo en targets"
-            predictions = predict(model, reshape(test_inputs, 1, :))
+            try
+                predictions = predict(model, test_inputs)  # Nota: el reshape probablemente no es necesario
+            catch e
+                @error "Prediccion: " exception=e
+                # Opcionalmente, manejar el error o re-lanzar la excepción
+            end
             # ni puta idea de que es un array{String, 0} tbh
-            println(predictions)
-            println(test_targets)
             metrics = confusionMatrix(vec(test_targets), vec(predictions))
 
 
