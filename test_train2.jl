@@ -17,9 +17,9 @@ end
 # Test case 2: Training with non-empty datasets
 function test_trainClassANN_non_empty_datasets()
     topology = [2, 3, 1]
-    trainingDataset = (rand(2, 100), rand(2, 100) .> 0.5)
-    validationDataset = (rand(2, 100), rand(2, 100) .> 0.5)
-    testDataset = (rand(2, 100), rand(2, 100) .> 0.5)
+    trainingDataset = (rand(100, 2), rand(100, 2) .> 0.5)
+    validationDataset = (rand(100, 2), rand(100, 2) .> 0.5)
+    testDataset = (rand(100, 2), rand(100, 2) .> 0.5)
     transferFunctions = [σ, σ, σ]
     maxEpochs = 1000
     minLoss = 0.0
@@ -58,9 +58,9 @@ end
 # Test case 3: Training with 2 classes
 function test_trainClassANN_2_classes()
     topology = [2, 3, 2]
-    trainingDataset = (rand(2, 100), rand(2, 100) .> 0.5)
-    validationDataset = (rand(2, 100), rand(2, 100) .> 0.5)
-    testDataset = (rand(2, 100), rand(2, 100) .> 0.5)
+    trainingDataset = (rand(100, 2), rand(100, 2) .> 0.5)
+    validationDataset = (rand(100, 2), rand(100, 2) .> 0.5)
+    testDataset = (rand(100, 2), rand(100, 2) .> 0.5)
     transferFunctions = [σ, σ, σ]
     maxEpochs = 1000
     minLoss = 0.0

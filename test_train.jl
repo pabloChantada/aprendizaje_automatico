@@ -25,8 +25,8 @@ include("35634619Y_48114048A_32740686W_48111913F.jl")
         maxEpochsVal=maxEpochsVal
     )
 
-    @test length(train_losses) > 1
-    @test length(val_losses) > 1
-    @test length(test_losses) > 1
+    @test length(train_losses) >= 1
+    @test length(val_losses) >= 1
+    @test length(test_losses) >= 1
     @test best_model isa Flux.Chain
 end

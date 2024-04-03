@@ -16,7 +16,7 @@ targets = string.(targets)
 acc, fail_rate, sensitivity, specificity, VPP, VPN, F1 = [], [], [], [], [], [], []
 # Comenzamos la validación cruzada
 # for fold in unique(crossValidationIndices)
-for test_indices in crossValidationIndices
+test_indices = 1
     # Obtenemos los índices de entrenamiento
     train_indices = filter(x -> !(x in test_indices), 1:size(inputs, 1))
     # Convertimos el rango en un vector de índices

@@ -1,127 +1,278 @@
 using Test
 include("35634619Y_48114048A_32740686W_48111913F.jl")
-@testset "modelCrossValidation tests" begin
-    # Test case for ANNCrossValidation
-    #=
-    @testset "ANNCrossValidation" begin
-        topology = [2, 2, 1]
-        inputs = [0 0; 0 1; 1 0; 1 1]
-        targets = [1, 0, 0, 0, 1, 1, 0]
-        crossValidationIndices = [1, 2]
 
-        results = modelCrossValidation(:ANN, Dict("topology" => topology), inputs, targets, crossValidationIndices)
+# Test ANNCrossValidation function
+@testset "ANNCrossValidation function" begin
+    # Define test inputs
+    topology = [2, 3, 1]
+    inputs = [1 2; 3 4; 5 6; 7 8]
+    targets = [0, 1, 0, 1]
+    crossValidationIndices = [1, 1, 2, 2]
 
-        @test length(results) == 7
-        @test all(length(r) == 2 for r in results)
-        @test !isnan(results[1][1])
-        @test !isnan(results[2][1])
-        @test !isnan(results[3][1])
-        @test !isnan(results[4][1])
-        @test !isnan(results[5][1])
-        @test !isnan(results[6][1])
-        @test !isnan(results[7][1])
-        @test !isnan(results[1][2])
-        @test !isnan(results[2][2])
-        @test !isnan(results[3][2])
-        @test !isnan(results[4][2])
-        @test !isnan(results[5][2])
-        @test !isnan(results[6][2])
-        @test !isnan(results[7][2])
-        @test results[1][2] >= 0
-        @test results[2][2] >= 0
-        @test results[3][2] >= 0
-        @test results[4][2] >= 0
-        @test results[5][2] >= 0
-        @test results[6][2] >= 0
-        @test results[7][2] >= 0
-    end
-    =#
-    # Test case for other models
-    @testset "Other models" begin
-        inputs = [1 2; 3 4; 5 6; 7 8]
-        targets = [1, 0, 1, 0]
-        crossValidationIndices = [1, 2]
+    # Define expected outputs
+    expected_mean_acc = 0.5
+    expected_std_acc = 0.0
+    expected_mean_fail_rate = 0.5
+    expected_std_fail_rate = 0.0
+    expected_mean_sensitivity = 0.0
+    expected_std_sensitivity = 0.0
+    expected_mean_specificity = 1.0
+    expected_std_specificity = 0.0
+    expected_mean_vpp = 0.0
+    expected_std_vpp = 0.0
+    expected_mean_vpn = 1.0
+    expected_std_vpn = 0.0
+    expected_mean_f1 = 0.0
+    expected_std_f1 = 0.0
 
-        # Test case for SVC
-        @testset "SVC" begin
-            modelHyperparameters = Dict("C" => 1.0, "kernel" => "linear", "degree" => 3, "gamma" => "auto", "coef0" => 0.0)
-            results = modelCrossValidation(:SVC, modelHyperparameters, inputs, targets, crossValidationIndices)
+    # Call the ANNCrossValidation function
+    result = ANNCrossValidation(topology, inputs, targets, crossValidationIndices)
 
-            # Add assertions for the results of SVC model
-        end
-
-        # Test case for DecisionTreeClassifier
-        @testset "DecisionTreeClassifier" begin
-            modelHyperparameters = Dict("max_depth" => 3)
-            results = modelCrossValidation(:DecisionTreeClassifier, modelHyperparameters, inputs, targets, crossValidationIndices)
-
-            # Add assertions for the results of DecisionTreeClassifier model
-        end
-
-        # Test case for KNeighborsClassifier
-        @testset "KNeighborsClassifier" begin
-            modelHyperparameters = Dict("n_neighbors" => 3)
-            results = modelCrossValidation(:KNeighborsClassifier, modelHyperparameters, inputs, targets, crossValidationIndices)
-
-            # Add assertions for the results of KNeighborsClassifier model
-        end
-    end
+    # Check the results
+    @test result == ((expected_mean_acc, expected_std_acc), (expected_mean_fail_rate, expected_std_fail_rate),
+                     (expected_mean_sensitivity, expected_std_sensitivity), (expected_mean_specificity, expected_std_specificity),
+                     (expected_mean_vpp, expected_std_vpp), (expected_mean_vpn, expected_std_vpn), (expected_mean_f1, expected_std_f1))
 end
 
+using Test
 
-    # Convertimos el vector de salidas deseada a texto para evitar errores con la librería de Python
-    targets = string.(targets)
+# Test ANNCrossValidation function
+@testset "ANNCrossValidation function" begin
+    # Define test inputs
+    topology = [2, 3, 1]
+    inputs = [1 2; 3 4; 5 6; 7 8]
+    targets = [0, 1, 0, 1]
+    crossValidationIndices = [1, 1, 2, 2]
 
-    # Creamos vectores para almacenar los resultados de las métricas en cada fold
-    acc, fail_rate, sensitivity, specificity, VPP, VPN, F1 = [], [], [], [], [], [], []
-    # Comenzamos la validación cruzada
-    # for fold in unique(crossValidationIndices)
-    fold = unique(crossValidationIndices)[1]
-        #for test_indices in crossValidationIndices
-            # Obtenemos los índices de entrenamiento
-            train_indices = filter(x -> !(x in fold), 1:size(inputs, 1))
-            # Convertimos el rango en un vector de índices
-            test_indices = collect(fold)
-        # Dividimos los datos en entrenamiento y prueba
-        train_inputs = inputs[train_indices, :]
-        train_targets = targets[train_indices]
-        test_inputs = inputs[test_indices, :]
-        test_targets = targets[test_index]
+    # Define expected outputs
+    expected_mean_acc = 0.0
+    expected_std_acc = 0.0
+    expected_mean_fail_rate = 0.0
+    expected_std_fail_rate = 0.0
+    expected_mean_sensitivity = 0.0
+    expected_std_sensitivity = 0.0
+    expected_mean_specificity = 0.0
+    expected_std_specificity = 0.0
+    expected_mean_vpp = 0.0
+    expected_std_vpp = 0.0
+    expected_mean_vpn = 0.0
+    expected_std_vpn = 0.0
+    expected_mean_f1 = 0.0
+    expected_std_f1 = 0.0
 
-        # Creamos el modelo según el tipo especificado
-        # model = nothing
-        if modelType == :SVC
-            model = SVC(C=modelHyperparameters["C"], kernel=modelHyperparameters["kernel"],
-                        degree=modelHyperparameters["degree"], gamma=modelHyperparameters["gamma"],
-                        coef0=modelHyperparameters["coef0"])
-        elseif modelType == :DecisionTreeClassifier
-            model = DecisionTreeClassifier(max_depth=modelHyperparameters["max_depth"])
-        elseif modelType == :KNeighborsClassifier
-            model = KNeighborsClassifier(n_neighbors=modelHyperparameters["n_neighbors"])
-        end
+    # Call the ANNCrossValidation function
+    result = ANNCrossValidation(topology, inputs, targets, crossValidationIndices)
 
-        # Entrenamos el modelo
-        model = fit!(model, train_inputs, train_targets)
-        # Problema aqui
-        predictions = predict(model, reshape(test_inputs, 1, :))
-        # ni puta idea de que es un array{String, 0} tbh
-        println(predictions)
-        println(test_targets)
-        metrics = confusionMatrix(vec(test_targets), vec(predictions))
-        push!(acc, metrics[1])
-        push!(fail_rate, metrics[2])
-        push!(sensitivity, metrics[3])
-        push!(specificity, metrics[4])
-        push!(VPP, metrics[5])
-        push!(VPN, metrics[6])
-        push!(F1, metrics[7])
-    end
-    # Devolvemos los resultados como una tupla de tuplas
-    return ((mean(acc), std(acc)), 
-            (mean(fail_rate), std(fail_rate)),
-            (mean(sensitivity), std(sensitivity)), 
-            (mean(specificity), std(specificity)),
-            (mean(VPP), std(VPP)), 
-            (mean(VPN), std(VPN)), 
-            (mean(F1), std(F1)))
+    # Check the results
+    @test length(result) == 7
+
+    topology = [2, 3, 1]
+    inputs = [1 2; 3 4; 5 6; 7 8]
+    targets = [0, 1, 0, 1]
+    crossValidationIndices = [1, 1, 2, 2]
+    result = ANNCrossValidation(topology, inputs, targets, crossValidationIndices)
+    @test length(result) == 7
+end# Test ANNCrossValidation function
+
+@testset "ANNCrossValidation function" begin
+    # Define test inputs
+    topology = [2, 4, 1]
+    inputs = [2 4; 6 8; 10 12; 14 16]
+    targets = [1, 0, 1, 0]
+    crossValidationIndices = [1, 2, 2, 1]
+    
+    # Define expected outputs (Estos valores son hipotéticos y para fines de prueba)
+    expected_mean_acc = 0.75
+    expected_std_acc = 0.25
+    expected_mean_fail_rate = 0.25
+    expected_std_fail_rate = 0.25
+    expected_mean_sensitivity = 0.75
+    expected_std_sensitivity = 0.25
+    expected_mean_specificity = 0.75
+    expected_std_specificity = 0.25
+    expected_mean_vpp = 0.7
+    expected_std_vpp = 0.3
+    expected_mean_vpn = 0.7
+    expected_std_vpn = 0.3
+    expected_mean_f1 = 0.72
+    expected_std_f1 = 0.28
+    
+
+    # Call the ANNCrossValidation function
+    result = ANNCrossValidation(topology, inputs, targets, crossValidationIndices)
+
+    # Check the results
+    @test result == ((expected_mean_acc, expected_std_acc), (expected_mean_fail_rate, expected_std_fail_rate),
+                     (expected_mean_sensitivity, expected_std_sensitivity), (expected_mean_specificity, expected_std_specificity),
+                     (expected_mean_vpp, expected_std_vpp), (expected_mean_vpn, expected_std_vpn), (expected_mean_f1, expected_std_f1))
+end
+# Test ANNCrossValidation function
+@testset "ANNCrossValidation function" begin
+    # Define test inputs
+    topology = [2, 3, 1]
+    inputs = [1 2; 3 4; 5 6; 7 8]
+    targets = [0, 1, 0, 1]
+    crossValidationIndices = [1, 1, 2, 2]
+
+    # Define expected outputs
+    expected_mean_acc = 0.5
+    expected_std_acc = 0.0
+    expected_mean_fail_rate = 0.5
+    expected_std_fail_rate = 0.0
+    expected_mean_sensitivity = 0.0
+    expected_std_sensitivity = 0.0
+    expected_mean_specificity = 1.0
+    expected_std_specificity = 0.0
+    expected_mean_vpp = 0.0
+    expected_std_vpp = 0.0
+    expected_mean_vpn = 1.0
+    expected_std_vpn = 0.0
+    expected_mean_f1 = 0.0
+    expected_std_f1 = 0.0
+
+    # Call the ANNCrossValidation function
+    result = ANNCrossValidation(topology, inputs, targets, crossValidationIndices)
+
+    # Check the results
+    @test result == ((expected_mean_acc, expected_std_acc), (expected_mean_fail_rate, expected_std_fail_rate),
+                     (expected_mean_sensitivity, expected_std_sensitivity), (expected_mean_specificity, expected_std_specificity),
+                     (expected_mean_vpp, expected_std_vpp), (expected_mean_vpn, expected_std_vpn), (expected_mean_f1, expected_std_f1))
+end
+
+# Test ANNCrossValidation function with different inputs
+@testset "ANNCrossValidation function with different inputs" begin
+    # Define test inputs
+    topology = [2, 4, 1]
+    inputs = [2 4; 6 8; 10 12; 14 16]
+    targets = [1, 0, 1, 0]
+    crossValidationIndices = [1, 2, 2, 1]
+    
+    # Define expected outputs
+    expected_mean_acc = 0.75
+    expected_std_acc = 0.25
+    expected_mean_fail_rate = 0.25
+    expected_std_fail_rate = 0.25
+    expected_mean_sensitivity = 0.75
+    expected_std_sensitivity = 0.25
+    expected_mean_specificity = 0.75
+    expected_std_specificity = 0.25
+    expected_mean_vpp = 0.7
+    expected_std_vpp = 0.3
+    expected_mean_vpn = 0.7
+    expected_std_vpn = 0.3
+    expected_mean_f1 = 0.72
+    expected_std_f1 = 0.28
+
+    # Call the ANNCrossValidation function
+    result = ANNCrossValidation(topology, inputs, targets, crossValidationIndices)
+
+    # Check the results
+    @test result == ((expected_mean_acc, expected_std_acc), (expected_mean_fail_rate, expected_std_fail_rate),
+                     (expected_mean_sensitivity, expected_std_sensitivity), (expected_mean_specificity, expected_std_specificity),
+                     (expected_mean_vpp, expected_std_vpp), (expected_mean_vpn, expected_std_vpn), (expected_mean_f1, expected_std_f1))
+end# Test modelCrossValidation function with ANN model
+
+
+
+
+# Simulación de datos de entrada y objetivos
+inputs = rand(100, 10) # 100 filas de datos, 10 características
+targets = [rand(["Clase1", "Clase2"]) for _ in 1:100] # 100 objetivos aleatorios
+crossValidationIndices = repeat(1:5, 20) # 5-folds
+
+# Hiperparámetros para un modelo SVC como ejemplo
+modelHyperparameters = Dict(
+    "C" => 1.0,
+    "kernel" => "linear",
+    "degree" => 3,
+    "gamma" => "scale",
+    "coef0" => 0.0
+)
+
+# Llamada de prueba a la función modelCrossValidation para el modelo SVC
+results = modelCrossValidation(:SVC, modelHyperparameters, inputs, targets, crossValidationIndices)
+
+println("Resultados de la prueba: ", results)
+
+# Asume que la generación de datos y la configuración de índices ya se ha realizado
+include("35634619Y_48114048A_32740686W_48111913F.jl")
+
+# Hiperparámetros para ANN
+modelHyperparameters = Dict("topology" => [10, 5, 2]) # Ejemplo: 10 neuronas en la capa de entrada, 5 en la oculta, 2 en la salida
+
+# Llamada a la función modelCrossValidation para ANN
+results = modelCrossValidation(:ANN, modelHyperparameters, inputs, targets, crossValidationIndices)
+
+println("Resultados de la prueba con ANN: ", results)
+
+
+include("35634619Y_48114048A_32740686W_48111913F.jl")
+# Test modelCrossValidation function with ANN model
+@testset "modelCrossValidation function with ANN model" begin
+    # Define test inputs
+    modelType = :ANN
+    modelHyperparameters = Dict("topology" => [10, 5, 2])
+    inputs = rand(100, 10)
+    targets = [rand(["Clase1", "Clase2"]) for _ in 1:100]
+    crossValidationIndices = repeat(1:5, 20)
+
+    # Call the modelCrossValidation function
+    results = modelCrossValidation(modelType, modelHyperparameters, inputs, targets, crossValidationIndices)
+
+    # Check the results
+    @test length(results) == 7
+end
+
+# Test modelCrossValidation function with SVC model
+@testset "modelCrossValidation function with SVC model" begin
+    # Define test inputs
+    modelType = :SVC
+    modelHyperparameters = Dict(
+        "C" => 1.0,
+        "kernel" => "linear",
+        "degree" => 3,
+        "gamma" => "scale",
+        "coef0" => 0.0
+    )
+    inputs = rand(100, 10)
+    targets = [rand(["Clase1", "Clase2"]) for _ in 1:100]
+    crossValidationIndices = repeat(1:5, 20)
+
+    # Call the modelCrossValidation function
+    results = modelCrossValidation(modelType, modelHyperparameters, inputs, targets, crossValidationIndices)
+
+    # Check the results
+    @test length(results) == 7
+end
+
+# Test modelCrossValidation function with DecisionTreeClassifier model
+@testset "modelCrossValidation function with DecisionTreeClassifier model" begin
+    # Define test inputs
+    modelType = :DecisionTreeClassifier
+    modelHyperparameters = Dict("max_depth" => 5)
+    inputs = rand(100, 10)
+    targets = [rand(["Clase1", "Clase2"]) for _ in 1:100]
+    crossValidationIndices = repeat(1:5, 20)
+
+    # Call the modelCrossValidation function
+    results = modelCrossValidation(modelType, modelHyperparameters, inputs, targets, crossValidationIndices)
+
+    # Check the results
+    @test length(results) == 7
+end
+
+# Test modelCrossValidation function with KNeighborsClassifier model
+@testset "modelCrossValidation function with KNeighborsClassifier model" begin
+    # Define test inputs
+    modelType = :KNeighborsClassifier
+    modelHyperparameters = Dict("n_neighbors" => 3)
+    inputs = rand(100, 10)
+    targets = [rand(["Clase1", "Clase2"]) for _ in 1:100]
+    crossValidationIndices = repeat(1:5, 20)
+
+    # Call the modelCrossValidation function
+    results = modelCrossValidation(modelType, modelHyperparameters, inputs, targets, crossValidationIndices)
+
+    # Check the results
+    @test length(results) == 7
 end

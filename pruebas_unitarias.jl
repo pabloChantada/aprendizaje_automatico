@@ -14,8 +14,8 @@ targets = dataset[:,5];
 =#
 # PARTE 1
 # --------------------------------------------------------------------------
-#= uncoment to use
 # Test 1: Dos clases
+
 feature1 = [1, 2, 1, 2, 1, 2, 2, 1, 2]
 classes1 = [1, 2]
 result1 = oneHotEncoding(feature1, classes1)
@@ -115,16 +115,17 @@ println("Incompleta con copy: ",new_normalize_values[1:15])
 
 
 # Caso 1: Una matriz con una sola columna
-outputs1 = [0.2; 0.7; 0.4]
-expected_output1 = [false; true; false]
+outputs1 = [0.2, 0.7, 0.4, 0.2, 0.7, 0.4]
+expected_output1 = [false, true, false]
 result1 = classifyOutputs(outputs1)
 size(outputs1)
 matrix_outputs = reshape(result1, :,1)
 @assert result1 == expected_output1
 
 # Caso 2: Una matriz con múltiples columnas
-outputs2 = [0.2 0.6; 0.7 0.8; 0.4 0.9]
-expected_output2 = [false true; false true; false true]
+
+outputs2 = [0.2 0.6 0.4; 0.9 0.8 1; 0.4 0.9 0.2]
+expected_output2 = [false true; true false; false true]
 result2 = classifyOutputs(outputs2)
 println(result2)
 println(expected_output2)
