@@ -125,24 +125,26 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
     return acc, fail_rate, sensitivity, specificity, ppv, npv, f1, confusion_matrix
 end
 
+using Test;
+include("35634619Y_48114048A_32740686W_48111913F.jl")
 @testset "Test" begin
     outputs = Bool[1 0 0; 0 1 0; 0 0 1; 1 0 0; 0 1 0]
     targets = Bool[1 0 0; 0 1 0; 0 0 1; 0 1 0; 1 0 0]
-    acc, fail_rate, sensitivity, specificity, ppv, npv, f1, confusion_matrix = confusionMatrix(outputs, targets, "macro")
+    acc, fail_rate, sensitivity, specificity, ppv, npv, f1, confusion_matrix = confusionMatrix(outputs, targets)
     expected_confusion_matrix = [1 1 0; 1 1 0; 0 0 1]
     @test confusion_matrix == expected_confusion_matrix
 
     # Test 1
     outputs = Bool[1 0 0; 0 1 0; 0 0 1; 1 0 0; 0 1 0]
     targets = Bool[1 0 0; 0 1 0; 0 0 1; 0 1 0; 1 0 0]
-    _, _, _, _, _, _, _, confusion_matrix = confusionMatrix(outputs, targets, "macro")
+    _, _, _, _, _, _, _, confusion_matrix = confusionMatrix(outputs, targets)
     expected_confusion_matrix = [1 1 0; 1 1 0; 0 0 1]
     @test confusion_matrix == expected_confusion_matrix
 
     # Test 3
     outputs = Bool[1 0 0; 0 1 0; 0 0 1; 1 0 0; 0 1 0]
     targets = Bool[1 0 0; 0 1 0; 0 0 1; 1 0 0; 0 1 0]
-    _, _, _, _, _, _, _, confusion_matrix = confusionMatrix(outputs, targets, "macro")
+    _, _, _, _, _, _, _, confusion_matrix = confusionMatrix(outputs, targets)
     expected_confusion_matrix = [2 0 0; 0 2 0; 0 0 1]
     @test confusion_matrix == expected_confusion_matrix
 

@@ -205,7 +205,7 @@ results = modelCrossValidation(:ANN, modelHyperparameters, inputs, targets, cros
 
 println("Resultados de la prueba con ANN: ", results)
 
-
+using Test
 include("35634619Y_48114048A_32740686W_48111913F.jl")
 # Test modelCrossValidation function with ANN model
 @testset "modelCrossValidation function with ANN model" begin

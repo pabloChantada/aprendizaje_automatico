@@ -253,12 +253,6 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
 
     # Se trasponen las matrices para que las columnas sean los patrones y las filas las características.
     # Y crear la RNA con los datos de entrada.
-    inputs_train = transpose(inputs_train)
-    targets_train = transpose(targets_train)
-    inputs_val = transpose(inputs_val)
-    targets_val = transpose(targets_val)
-    inputs_test = transpose(inputs_test)
-    targets_test = transpose(targets_test)
 
     # Si falla es posiblemente por la diferencia de tamaño entre validaiton/test y train
     # Si tienen el mismo tamaño funciona, con distinto falla
@@ -267,6 +261,7 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     ann = buildClassANN(size(inputs_train,2), topology, size(targets_train,2); transferFunctions=transferFunctions)
 
     # Creamos loss, función que calcula la pérdida de la red neuronal durante el entrenamiento. (la del enunciado)
+    # tiene que estar transpuesto
     loss(model, x, y) = (size(y, 1) == 1) ? Losses.binarycrossentropy(model(x), y) : Losses.crossentropy(model(x), y)
 
     # Configuramos el estado del optimizador Adam (Adaptive Moment Estimation) 
@@ -303,8 +298,10 @@ function trainClassANN(topology::AbstractArray{<:Int,1},
     push!(train_losses, train_loss)
     push!(val_losses, val_loss)
     push!(test_losses, test_loss)
-    epoch = 1
-    while epoch < maxEpochs && val_loss > minLoss
+    # epoch = 1
+    epoch = 0
+    # while epoch < maxEpochs
+    while epoch < maxEpochs - 1 && val_loss > minLoss
 
         #Iniciamos el entrenamiento.
         Flux.train!(loss, ann, [(inputs_train', targets_train')], opt_state)
@@ -501,14 +498,16 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
         end
         
         # Este es el problema
-        confusion_matrix = zeros(Int, num_classes, num_classes)
-
-        for i in 1:num_classes
-            for j in 1:num_classes
-                confusion_matrix[i, j] = sum((outputs[:, i] .== true) .& (targets[:, j] .== true))
-            end
+        confusion_matrix = zeros(num_classes, num_classes)
+        rows = size(targets, 1)
+        for i in 1:rows
+            x = findfirst(targets[i, :])
+            y = findfirst(outputs[i, :])
+            confusion_matrix[x,y] += 1
         end
-
+        # f -> targets -> findfirst(targets[i,:])
+        # c -> outputs -> findfirst(outputs[i,:])
+        # confusion_matrix[f,c] += 1
         # Calcular precisión y tasa de fallo
         acc = accuracy(outputs, targets)
         fail_rate = 1 - acc
@@ -516,11 +515,13 @@ function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{
         # vec(sum(targets, dims=1)) = [clase1, clase2, ...]
         # Sensivlidad1 * instancias1 + Sensibilidad2 * instancias2 + ... / total instancias
         if weighted
+            # sum(matriz_confusion, dim=2) / sum(targets, 1)
             # Calcula el total de instancias por clase
             class_weights = sum(targets, dims=1)[:] / sum(targets)
             
             # Calcula métricas ponderadas
             # Posiblemente esto este mal
+            # sin dividir
             sensitivities = sum(sensitivities .* class_weights) / sum(class_weights)
             specificities = sum(specificities .* class_weights) / sum(class_weights)
             ppvs = sum(ppvs .* class_weights) / sum(class_weights)
@@ -675,39 +676,41 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
 
     for fold in 1:numFolds
         # Separar datos de entrenamiento y test usando crossValidationIndices
+        # crossvalidation .!= fold
         trainIdx = findall(x->x!=fold, crossValidationIndices)
         testIdx = findall(x->x==fold, crossValidationIndices)
-        trainInputs, trainTargets = inputs[trainIdx, :], targets_onehot[trainIdx, :]
-        testInputs, testTargets = inputs[testIdx, :], targets_onehot[testIdx, :]
 
+        train_inputs = inputs[trainIdx, :]
+        train_targets = targets_onehot[trainIdx, :]
+        test_inputs = inputs[testIdx, :]
+        test_targets = targets_onehot[testIdx, :]
         # Resultados de las métricas para este fold
         foldPrecision, foldErrorRate, foldSensitivity, foldSpecificity, foldPPV, foldNPV, foldF1 = ([] for _ in 1:7)
 
-        for execution in 1:numExecutions
+        for i in 1:numExecutions
             # División en entrenamiento y validación si es necesario
             if validationRatio > 0
-                # Asumiendo que trainInputs, trainTargets ya están definidos
-                # Calcular el adjustedValidationRatio correcto para este escenario
                 N = size(trainInputs, 1) # Número total de patrones en el conjunto de entrenamiento
-                adjustedValidationRatio = validationRatio * (N / (size(inputs, 1) - length(testIdx)))
-                
+                # adjustedValidationRatio = validationRatio * (N / (size(inputs, 1) - length(testIdx)))
+                # P = 1 - adjustedValidationRatio
                 # Dividir el conjunto de entrenamiento usando holdOut para obtener índices de validación
-                (train_idx, val_idx) = holdOut(N, adjustedValidationRatio)
-                trainInputsAdj, validationInputs = trainInputs[train_idx, :], trainInputs[val_idx, :]
-                trainTargetsAdj, validationTargets = trainTargets[train_idx, :], trainTargets[val_idx, :]
-                
+                (train_idx, val_idx) = holdOut(N, validationRatio)
+                train_inputs_hold = train_inputs[train_idx, :]
+                train_targets_hold = train_targets[train_idx, :]
+                val_index = ttargets[val_idx, :]
+                val_tar = ttargets[val_idx, :]
                 # Preparar los datasets como tuplas
-                trainingDataset = (trainInputsAdj, trainTargetsAdj)
-                validationDataset = (validationInputs, validationTargets)
-                
+                trainingDataset = (train_inputs_hold, train_targets_hold)
+                validationDataset = (val_index, val_tar)
+                test_dataset = (test_inputs, test_targets)
                 # Llamar a trainClassANN con conjuntos de entrenamiento y validación
                 ann_trained = trainClassANN(topology, trainingDataset, validationDataset=validationDataset,
+                                testDataset=test_dataset,
                                 transferFunctions=transferFunctions, maxEpochs=maxEpochs,
                                 minLoss=minLoss, learningRate=learningRate, maxEpochsVal=maxEpochsVal)
             else
                 # Preparar el dataset de entrenamiento como tupla
-                trainingDataset = (trainInputs, trainTargets)
-                
+                trainingDataset = (train_inputs, train_targets)
                 # Llamar a trainClassANN solo con el conjunto de entrenamiento
                 ann_trained = trainClassANN(topology, trainingDataset, transferFunctions=transferFunctions,
                                 maxEpochs=maxEpochs, minLoss=minLoss, learningRate=learningRate,
@@ -716,16 +719,19 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
             
             # Evaluación del modelo
             # La confusion matrix es lo que esta mal
-            confusionMatrixResult = confusionMatrix(ann_trained[3], vec(testTargets))
-            foldPrecision2, foldErrorRate2, foldSensitivity2, foldSpecificity2, foldPPV2, foldNPV2, foldF12 = confusionMatrixResult[1:7]
+            test_outputs = ann_trained[2]
+            println(test_outputs)
+            confusionMatrixResult = confusionMatrix(test_outputs, vec(test_targets'))
+            # Assuming confusionMatrixResult is a tuple with the desired metrics
+            push!(foldPrecision, confusionMatrixResult[1])
+            push!(foldErrorRate, confusionMatrixResult[2])
+            push!(foldSensitivity, confusionMatrixResult[3])
+            push!(foldSpecificity, confusionMatrixResult[4])
+            push!(foldPPV, confusionMatrixResult[5])
+            push!(foldNPV, confusionMatrixResult[6])
+            push!(foldF1, confusionMatrixResult[7])
+
             # Almacenar resultados
-            push!(foldPrecision, foldPrecision2)
-            push!(foldErrorRate, foldErrorRate2)
-            push!(foldSensitivity, foldSensitivity2)
-            push!(foldSpecificity, foldSpecificity2)
-            push!(foldPPV, foldPPV2)
-            push!(foldNPV, foldNPV2)
-            push!(foldF1, foldF12)            
         end
         push!(precision, mean(foldPrecision))
         push!(errorRate, mean(foldErrorRate))
@@ -733,7 +739,7 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
         push!(specificity, mean(foldSpecificity))
         push!(ppv, mean(foldPPV))
         push!(npv, mean(foldNPV))
-        push!(f1, mean(foldF1))
+        push!(f1, mean(foldF1))     
     end
     # Calcular medias y desviaciones estándar de las métricas de todos los folds
     result = ((mean(precision), std(precision)), (mean(errorRate), std(errorRate)),
@@ -751,26 +757,25 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
 
 
     if modelType == :ANN
-    # Asegúrate de que 'topology' existe dentro de 'modelHyperparameters'
+        # Asegúrate de que 'topology' existe dentro de 'modelHyperparameters'
         if haskey(modelHyperparameters, "topology")
             topology = modelHyperparameters["topology"]
             # Llamada ajustada a ANNCrossValidation con el argumento esperado
-            return ANNCrossValidation(topology, inputs, targets, crossValidationIndices)
+            return ANNCrossValidation(topology, inputs, targets, crossValidationIndices;
+                numExecutions = get(modelHyperparameters, "numExecutions", 50),
+                transferFunctions = get(modelHyperparameters, "transferFunctions", fill(σ, length(topology))),
+                maxEpochs = get(modelHyperparameters, "maxEpochs", 1000),
+                minLoss = get(modelHyperparameters, "minLoss", 0.0),
+                learningRate = get(modelHyperparameters, "learningRate", 0.01),
+                validationRatio = get(modelHyperparameters, "validationRatio", 0),
+                maxEpochsVal = get(modelHyperparameters, "maxEpochsVal", 20))
         else
             error("Hiperparámetro 'topology' no encontrado en 'modelHyperparameters'.")
         end
     end
-    
+
     # Inicialización de vectores para resultados de métricas
-    metrics = Dict(
-        :precision => [],
-        :error_rate => [],
-        :sensitivity => [],
-        :specificity => [],
-        :PPV => [],
-        :NPV => [],
-        :F1 => []
-    )
+    precision, errorRate, sensitivity, specificity, ppv, npv, f1 = ([] for _ in 1:7)
 
     # Conversión de targets a string para compatibilidad con Scikit-Learn
     targets = string.(targets)
@@ -788,35 +793,31 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
                         degree=modelHyperparameters["degree"], gamma=modelHyperparameters["gamma"],
                         coef0=modelHyperparameters["coef0"])
         elseif modelType == :DecisionTreeClassifier
-            model = DecisionTreeClassifier(max_depth=modelHyperparameters["max_depth"])
+            model = DecisionTreeClassifier(max_depth=modelHyperparameters["max_depth"], random_state=1)
         elseif modelType == :KNeighborsClassifier
             model = KNeighborsClassifier(n_neighbors=modelHyperparameters["n_neighbors"])
         end
+        # Entrenamiento del modelo con los conjuntos de entrenamiento
+        fit!(model, X_train, y_train)
 
-        # Evaluación del modelo y cálculo de métricas
-        mode = fit!(model, X_train, y_train)
+        # Realización de predicciones con el conjunto de prueba
         predictions = predict(model, X_test)
-        acc, fail_rate, sensitivities, specificities, ppvs, npvs, f1s  = confusionMatrix(y_test, predictions)
+        # Calculo de métricas con las predicciones y los targets de prueba
+        acc, fail_rate, sensitivities, specificities, ppvs, npvs, f1s = confusionMatrix(y_test, predictions)
 
         # Almacenamiento de resultados de métricas
-        push!(metrics[:precision], acc)
-        push!(metrics[:error_rate], fail_rate)
-        push!(metrics[:sensitivity], sensitivities)
-        push!(metrics[:specificity], specificities)
-        push!(metrics[:PPV], ppvs)
-        push!(metrics[:NPV], npvs)
-        push!(metrics[:F1], f1s)
+        push!(precision, mean(acc))
+        push!(errorRate, mean(fail_rate))
+        push!(sensitivity, mean(sensitivities))
+        push!(specificity, mean(specificities))
+        push!(ppv, mean(ppvs))
+        push!(npv, mean(npvs))
+        push!(f1, mean(f1s))     
     end
 
     # Cálculo de la media y desviación estándar de cada métrica
-    results = (
-        (mean(metrics[:precision]), std(metrics[:precision])),
-        (mean(metrics[:error_rate]), std(metrics[:error_rate])),
-        (mean(metrics[:sensitivity]), std(metrics[:sensitivity])),
-        (mean(metrics[:specificity]), std(metrics[:specificity])),
-        (mean(metrics[:PPV]), std(metrics[:PPV])),
-        (mean(metrics[:NPV]), std(metrics[:NPV])),
-        (mean(metrics[:F1]), std(metrics[:F1]))
-    )
-    return results
+    result = ((mean(precision), std(precision)), (mean(errorRate), std(errorRate)),
+              (mean(sensitivity), std(sensitivity)), (mean(specificity), std(specificity)),
+              (mean(ppv), std(ppv)), (mean(npv), std(npv)), (mean(f1), std(f1)))
+    return result
 end

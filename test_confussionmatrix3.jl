@@ -38,11 +38,12 @@ using Test;
 # 1 1 0
 # 0 0 2
 using MLBase
-
+include("35634619Y_48114048A_32740686W_48111913F.jl")
 outputs = [true false false; false true false; false false true; true false false; false true false; false false true]
 targets = [true false false; false true false; false false true; false true false; true false false; false false true]
 _,_,_,_,_,_,_,confusion_matrix = confusionMatrix(outputs, targets)
 @test confusion_matrix == [1 1 0; 1 1 0; 0 0 2]
+
 
 n_samples = 6
 outputs = rand(1:3, n_samples)
