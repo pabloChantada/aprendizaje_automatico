@@ -1,0 +1,71 @@
+function confusionMatrix(outputs::AbstractArray{Bool,2}, targets::AbstractArray{Bool,2}, method::String)
+    # Check that the number of columns of both matrices is equal and not 2
+    @assert size(outputs, 2) == size(targets, 2) && size(outputs, 2) != 2
+
+    num_classes = size(outputs, 2)
+
+    # Initialize vectors for sensitivity, specificity, PPV, NPV, and F1 score
+    sensitivities = zeros(num_classes)
+    specificities = zeros(num_classes)
+    ppvs = zeros(num_classes)
+    npvs = zeros(num_classes)
+    f1s = zeros(num_classes)
+
+    # Iterate over each class
+    for i in 1:num_classes
+        # Call the confusionMatrix function with the columns corresponding to the current class
+        sensitivities[i], specificities[i], ppvs[i], npvs[i], f1s[i] = confusionMatrix(outputs[:, i], targets[:, i])
+    end
+
+    # Create the confusion matrix
+    confusion_matrix = [sum(outputs[:, i] .& targets[:, j]) for i in 1:num_classes, j in 1:num_classes]
+
+    # Calculate the macro or weighted average of the metrics
+    if method == "macro"
+        sensitivity = mean(sensitivities)
+        specificity = mean(specificities)
+        ppv = mean(ppvs)
+        npv = mean(npvs)
+        f1 = mean(f1s)
+    elseif method == "weighted"
+        weights = sum(targets, dims=1) ./ size(targets, 1)
+        sensitivity = dot(sensitivities, weights)
+        specificity = dot(specificities, weights)
+        ppv = dot(ppvs, weights)
+        npv = dot(npvs, weights)
+        f1 = dot(f1s, weights)
+    else
+        error("Invalid method: $method")
+    end
+
+    # Calculate the accuracy and error rate
+    acc = accuracy(confusion_matrix)
+    fail_rate = 1 - acc
+
+    return acc, fail_rate, sensitivity, specificity, ppv, npv, f1, confusion_matrix
+end
+
+using Test
+
+# Define a set of outputs and targets
+outputs = Bool[1 0 0; 0 1 0; 0 0 1; 1 0 0; 0 1 0]
+targets = Bool[1 0 0; 0 1 0; 0 0 1; 0 1 0; 1 0 0]
+
+# Call the function with the outputs and targets
+acc, fail_rate, sensitivity, specificity, ppv, npv, f1, confusion_matrix = confusionMatrix(outputs, targets, "macro")
+
+# Check that the returned values are as expected
+@Test.isequal(acc, 0.6)
+@Test.isequal(fail_rate, 0.4)
+# Add more tests for sensitivity, specificity, ppv, npv, f1
+# The expected values for these metrics will depend on the implementation of your confusionMatrix function
+# For example:
+# @Test.isequal(sensitivity, expected_sensitivity)
+# @Test.isequal(specificity, expected_specificity)
+# @Test.isequal(ppv, expected_ppv)
+# @Test.isequal(npv, expected_npv)
+# @Test.isequal(f1, expected_f1)
+
+# Check that the confusion matrix is as expected
+expected_confusion_matrix = [1 1 0; 1 1 0; 0 0 1]
+@Test.isequal(confusion_matrix, expected_confusion_matrix)

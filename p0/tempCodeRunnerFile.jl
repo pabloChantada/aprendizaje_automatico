@@ -1,0 +1,1 @@
+trainingDataset = (rand(100, 2), rand(100, 2) .> 0.5)

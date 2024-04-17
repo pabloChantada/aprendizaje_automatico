@@ -1,0 +1,88 @@
+function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict,
+                              inputs::AbstractArray{<:Real,2}, targets::AbstractArray{<:Any,1},
+                              crossValidationIndices::Array{Int64,1})
+
+Desarrollar una función llamada modelCrossValidation para que, además de entrenar redes
+de neuronas, también se realice validación cruzada sobre SVM, árboles de decisión y kNN. Los
+argumentos que debe recibir esta función son los siguientes:
+o El primero, modelType, de tipo Symbol, contendrá un indicador del modelo a
+entrenar. Este símbolo será igual a :ANN para el caso de entrenar redes de neuronas.
+Para entrenar SVM, árboles de decisión y kNN, se utilizarán símbolos con el mismo
+nombre que el modelo usado en Scikit-Learn, es decir, los siguientes símbolos: :SVC,
+:DecisionTreeClassifier y :KNeighborsClassifier.
+o El segundo, modelHyperparameters, contiene un objeto de tipo Dict con los
+hiperparámetros del modelo. Para el caso de los hiperparámetros de redes de
+neuronas, descritos en el ejercicio anterior, tened en cuenta que la mayoría son
+opcionales, siendo topology el único obligatorio. Por lo tanto, es posible que falte
+algún hiperparámetro. Para saber si una variable de tipo Dict contiene una clave o no,
+se puede usar la función haskey.
+En el caso de los hiperparámetros de los modelos utilizados de la librería Scikit-Learn,
+los hiperparámetros deberán tener el mismo nombre que los indicados en la
+documentación de la librería, que se pueden consultar en las siguientes direcciones,
+una para cada modelo:
+ https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html
+ https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeC
+lassifier.html
+ https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighb
+orsClassifier.html
+Dada la gran cantidad de hiperparámetros que se pueden especificar de acuerdo con
+la documentación de la librería, en este ejercicio solamente será necesario fijar unos
+pocos valores comunes para cada modelo. De esta manera, para cada modelo se
+deberán definir los siguientes hiperparámetros:
+ SVM (:SVC): C, kernel, degree, gamma y coef0. El hiperparámetro kernel
+puede tomar los valores "linear", "poly", "rbf" y "sigmoid". Los
+hiperparámetros degree, gamma y coef0 describen los valores de los
+parámetros propios de cada kernel, y, según el que se utilice, alguno puede
+ser ignorado. Por ejemplo, el kernel “poly” utiliza el grado del polinomio
+(degree), la pendiente (gamma), y el término independiente (coef0), mientras
+que el kernel “sigmoid” utiliza gamma y coef0. Tanto en el enlace de
+documentación como en los apuntes de teoría se pueden ver los parámetros
+usados por cada kernel. El hiperparámetro C se usa en todos los casos.
+ Árboles de decisión (:DecisionTreeClassifier): max_depth, que contiene la
+profundidad máxima de los árboles.
+ kNN (:KNeighborsClassifier): n_neighbors, con el valor de k, que especifica el
+número de vecinos a tomar.
+o inputs, de tipo AbstractArray{<:Real,2}
+o targets, de tipo AbstractArray{<:Any,1}
+o crossValidationIndices, de tipo Array{Int64,1}. Es importante tener en cuenta que, al
+igual que en la práctica anterior, la división de los patrones en cada fold es necesario
+hacerla fuera de esta función, porque de esta manera se permite que esta misma
+división se utilice al entrenar otros modelos. De esta forma, se realizará validación
+cruzada con los mismos datos y las mismas particiones en todos los casos.
+Esta función comenzará comprobando si se desea entrenar redes de neuronas (examinando
+el parámetro modelType). Si es así, se hace una llamada a la función ANNCrossValidation con
+los parámetros indicados en el parámetro modelHyperparameters, teniendo en cuenta que
+muchos de ellos podrían no estar en esa variable. Como se ha puesto anteriormente, la
+función haskey permite comprobar si un objeto de tipo Dict contiene una clave o no, lo que,
+en este caso, se corresponde con que un hiperparámetro haya sido definido o no. Se
+devuelve el resultado de esta llamada, con lo que, en caso de entrenar redes de neuronas, se
+saldría de la función en este punto.
+En caso de querer entrenar uno de los otros modelos, se procede de forma similar a la
+función del ejercicio anterior: creando 7 vectores, para los resultados para cada una de las 7
+métricas en cada fold. Además, una modificación que puede ser importante es, en los
+modelos de la librería Scikit-Learn, antes de entrenar ningún modelo, transformar el vector
+de salidas deseadas en un vector de cadenas de texto, para evitar cualquier posible error con
+la librería de Python. Esto se puede hacer, sencillamente, con la siguiente línea:
+targets = string.(targets);
+Una vez hechas estas sencillas operaciones, se puede comenzar con el bucle de la validación
+cruzada. En cada iteración, en primer lugar se calculan las matrices de entradas de
+entrenamiento y test, y los vectores de salidas deseadas de entrenamiento y test (de tipo
+AbstractArray{<:Any,1}), para, posteriormente, crear el modelo con los hiperparámetros
+especificados, entrenarlo, aplicarle el conjunto de test, calcular las métricas con la función
+confusionMatrix, y asignar estos valores a las posiciones correspondientes de los vectores.
+Este código a desarrollar deberá ser el mismo para cada uno de los 3 tipos de modelos (SVM,
+Árboles de Decisión, kNN), con la salvedad de que la línea en la que se cree el modelo debe
+ser distinta para cada uno de los modelos. Además, como diferencia principal con el
+entrenamiento de RR.NN.AA. del ejercicio anterior, estos modelos deberán ser entrenados
+una única vez, al ser deterministas.
+ Si se entrenan varias veces, ¿qué propiedades estadísticas tendrán los
+resultados de estos entrenamientos?
+Como se ha descrito previamente, en el caso de usar técnicas como SVM, árboles de decisión
+o kNN, no se hará uso de la configuración one-hot-encoding. En estos casos, para calcular las
+métricas se hará uso de la función confusionMatrix desarrollada en una práctica anterior que
+acepta como entradas dos vectores (salidas y salidas deseadas) de tipo Array{Any,1}.
+Esta función deberá devolver lo mismo que la realizada en el ejercicio anterior: una tupla con
+7 valores, uno para cada métrica, donde cada valor, a su vez, será una tupla con la media y la
+desviación típica de los valores de esa métrica en cada fold. Al igual que en el ejercicio
+anterior, estos 7 valores deberán ser, por este orden: precisión, tasa de error, sensibilidad,
+especificidad, VPP, VPN y F1.
