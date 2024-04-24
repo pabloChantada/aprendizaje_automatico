@@ -1,0 +1,4 @@
+- Análisis bibliográfico: al menos 8 trabajos sobre la BD
+- Media 0 -> valores atipicos
+- Media Min/Max
+- Mirar varaciones y quitar las que no afecten
