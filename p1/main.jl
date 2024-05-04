@@ -25,6 +25,7 @@ targets = vec((targets_df))
 max_vals, min_vals = calculateMinMaxNormalizationParameters(inputs)
 mean_vals, std_vals = calculateZeroMeanNormalizationParameters(inputs)
 normalize_data = normalizeMinMax!(inputs, (min_vals, max_vals))
+# [29324.096 214.2897 85.69418 44.97009 0.24667846 0.09200176 29774.916 59.17712 0.049086366 0.004660379 0.05951989 0.061713465 0.0011279982 0.00059587485 0.09899615 0.004366458]
 
 # ------------------------------------------------------------------
 # Generate the results using parallelization
