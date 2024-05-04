@@ -139,7 +139,7 @@ end;
 function buildClassANN(numInputs::Int, topology::AbstractArray{<:Int,1}, numOutputs::Int; transferFunctions::AbstractArray{<:Function,1}=fill(σ, length(topology)))
     ann=Chain();
     numInputsLayer = numInputs;
-    for numHiddenLayer in 1:length(topology)
+    for numHiddenLayer in 1:(length(topology))
         numNeurons = topology[numHiddenLayer];
         ann = Chain(ann..., Dense(numInputsLayer, numNeurons, transferFunctions[numHiddenLayer]));
         numInputsLayer = numNeurons;

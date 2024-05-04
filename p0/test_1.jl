@@ -115,7 +115,6 @@ end
         push!(VPP, metrics[5])
         push!(VPN, metrics[6])
         push!(F1, metrics[7])
-    end
     # Devolvemos los resultados como una tupla de tuplas
     return ((mean(acc), std(acc)), 
             (mean(fail_rate), std(fail_rate)),

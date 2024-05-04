@@ -62,7 +62,6 @@ encoded = oneHotEncoding(targets)
 
 # Mostrar el resultado
 println(encoded)
-=#
 
 # PARTE 2
 # --------------------------------------------------------------------------
