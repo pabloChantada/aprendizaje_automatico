@@ -159,7 +159,7 @@ acc_comparation = bar(model_types, accuracies, legend=false,
     ylims=ylims_range,  # Adjusted ylims based on data
     yticks=round(min_accuracy - padding, digits=3):0.005:round(max_accuracy + padding * 2, digits=3),
     bar_width=0.5,  # Wider bars for better visibility
-    color=[:lightblue, :lightgreen, :lightcoral],  # Different colors for each bar
+    color=[:lightblue, :lightgreen, :lightcoral, :lightpink],  # Different colors for each bar
     size=(800, 600))
 
 # Para cada barra añadimos el porcentaje    
@@ -170,17 +170,17 @@ annotate!([(i, accuracies[i] + 0.0002, text(string(round(accuracies[i] * 100, di
 # ------------------------------------------------------------------
 CSV.write("results.csv", sorted_df)
 
-savefig(original_distribution, "photos\\original_distribution.png")
-savefig(balance_distribution, "photos\\balance_distribution.png")
-savefig(hm, "photos\\heatmap.png")
-savefig(acc_comparation, "photos\\acc_comparation.png")
+savefig(original_distribution, "plots\\original_distribution.png")
+savefig(balance_distribution, "plots\\balance_distribution.png")
+savefig(hm, "plots\\heatmap.png")
+savefig(acc_comparation, "plots\\acc_comparation.png")
 
 # Histograms
 for (i, histogram_plot) in enumerate(histograms)
-    savefig(histogram_plot, "photos\\histogram_$(input_names[i]).png")
+    savefig(histogram_plot, "plots\\histogram_$(input_names[i]).png")
 end
 
 # Boxplots
 for (i, boxplot_plot) in enumerate(boxplots)
-    savefig(boxplot_plot, "photos\\boxplot_$(input_names[i]).png")
+    savefig(boxplot_plot, "plots\\boxplot_$(input_names[i]).png")
 end
