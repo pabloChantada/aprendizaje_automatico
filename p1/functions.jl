@@ -652,9 +652,6 @@ function ANNCrossValidation(topology::AbstractArray{<:Int,1},
 end;
 
 
-
-
-
 # ----------------------------------------------------------------------------------------------
 # ------------------------------------- Ejercicio 6 --------------------------------------------
 # ----------------------------------------------------------------------------------------------
@@ -760,3 +757,30 @@ function modelCrossValidation(modelType::Symbol, modelHyperparameters::Dict, inp
     return (mean(testAccuracy), std(testAccuracy)), (mean(testErrorRate), std(testErrorRate)), (mean(testRecall), std(testRecall)), (mean(testSpecificity), std(testSpecificity)), (mean(testPrecision), std(testPrecision)), (mean(testNPV), std(testNPV)), (mean(testF1), std(testF1));
 
 end;
+
+
+function manual_undersample(features, targets)
+    counts = countmap(targets)
+    min_count = minimum(values(counts))
+    
+    indices = Int[]
+    for class in keys(counts)
+        class_indices = findall(t -> t == class, targets)
+        sampled_indices = sample(class_indices, min_count, replace=false)
+        append!(indices, sampled_indices)
+    end
+    
+    return features[indices, :], targets[indices]
+end
+
+function get_column_data(results, index)
+    if index == 1
+        return [result[1] for result in results]
+    elseif index == 2
+        return [result[2] for result in results]
+    elseif index == 3
+        return [result[3][1] for result in results]
+    elseif index == 4
+        return [result[3][2] for result in results]
+    end
+end

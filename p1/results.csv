@@ -1,0 +1,25 @@
+Model,Params,Mean_Accuracy,Std_Accuracy
+KNeighborsClassifier,"Dict(""n_neighbors"" => 8)",0.9134929356357928,0.007560635065879003
+KNeighborsClassifier,"Dict(""n_neighbors"" => 10)",0.9121323914181056,0.007127431815789952
+KNeighborsClassifier,"Dict(""n_neighbors"" => 9)",0.9121297749869178,0.009356638333890248
+KNeighborsClassifier,"Dict(""n_neighbors"" => 11)",0.91212715855573,0.010069113705543968
+KNeighborsClassifier,"Dict(""n_neighbors"" => 7)",0.9113082155939299,0.007514070826703076
+KNeighborsClassifier,"Dict(""n_neighbors"" => 6)",0.9090999476713761,0.010644746183639005
+KNeighborsClassifier,"Dict(""n_neighbors"" => 5)",0.908563579277865,0.010020438721724879
+KNeighborsClassifier,"Dict(""n_neighbors"" => 4)",0.9041862899005755,0.009773513138293406
+SVC,"Dict{String, Any}(""C"" => 3, ""kernel"" => ""linear"", ""gamma"" => ""auto"", ""degree"" => 3, ""coef0"" => 0.5)",0.8995395081109366,0.007635281264640084
+DecisionTreeClassifier,"Dict(""max_depth"" => 9)",0.8970800627943485,0.010962719445402573
+DecisionTreeClassifier,"Dict(""max_depth"" => 10)",0.8962637362637362,0.008400234572223664
+DecisionTreeClassifier,"Dict(""max_depth"" => 7)",0.8959942438513867,0.013748768323425472
+DecisionTreeClassifier,"Dict(""max_depth"" => 8)",0.8951439037153323,0.01139731135184393
+SVC,"Dict{String, Any}(""C"" => 2, ""kernel"" => ""linear"", ""gamma"" => ""auto"", ""degree"" => 3, ""coef0"" => 0.5)",0.8924332810047095,0.003630865122324435
+DecisionTreeClassifier,"Dict(""max_depth"" => 11)",0.891883830455259,0.010027353481706962
+DecisionTreeClassifier,"Dict(""max_depth"" => 6)",0.8833935112506541,0.010402640525164741
+SVC,"Dict{String, Any}(""C"" => 3, ""kernel"" => ""rbf"", ""gamma"" => ""auto"", ""degree"" => 3, ""coef0"" => 0.5)",0.8790136054421769,0.006461958702067527
+SVC,"Dict{String, Any}(""C"" => 2, ""kernel"" => ""rbf"", ""gamma"" => ""auto"", ""degree"" => 3, ""coef0"" => 0.5)",0.8617844060701204,0.0072929669548769645
+SVC,"Dict{String, Any}(""C"" => 3, ""kernel"" => ""poly"", ""gamma"" => ""auto"", ""degree"" => 3, ""coef0"" => 0.5)",0.8467320774463631,0.00911267900995007
+DecisionTreeClassifier,"Dict(""max_depth"" => 5)",0.8426556776556776,0.00969769728233242
+SVC,"Dict{String, Any}(""C"" => 3, ""kernel"" => ""sigmoid"", ""gamma"" => ""auto"", ""degree"" => 3, ""coef0"" => 0.5)",0.8371480900052329,0.009964406897007998
+SVC,"Dict{String, Any}(""C"" => 2, ""kernel"" => ""poly"", ""gamma"" => ""auto"", ""degree"" => 3, ""coef0"" => 0.5)",0.8231815803244376,0.009619295117842154
+SVC,"Dict{String, Any}(""C"" => 2, ""kernel"" => ""sigmoid"", ""gamma"" => ""auto"", ""degree"" => 3, ""coef0"" => 0.5)",0.821828885400314,0.010606105700982273
+DecisionTreeClassifier,"Dict(""max_depth"" => 4)",0.8179696493982208,0.01657338419868985

@@ -9,123 +9,166 @@ using Plots
 using StatsPlots
 using Random
 using StatsBase
-
+using Statistics
+using CSV
 Random.seed!(42)
 
 # ------------------------------------------------------------------
 # Data Processing
 # ------------------------------------------------------------------
-# Read the file and get data
+# Leer el archivo y convertilo a DF para eliminar filas
 xf = XLSX.readxlsx("Dry_Bean_Dataset.xlsx")
 df = XLSX.gettable(xf["Dry_Beans_Dataset"]) |> DataFrame
-# Update the column selection as needed
+# Eliminamos las que tengan una std < 1
 select!(df, Not([:AspectRation, :Eccentricity, :Extent, :Solidity, :roundness, :Compactness, :ShapeFactor1, :ShapeFactor2, :ShapeFactor3, :ShapeFactor4]))
-# Keep column names before conversion
 inputs = df[2:end, 1:6]
 targets = df[2:end, 7]
 input_names = names(inputs)
-# Convert DataFrame to Matrix for numerical operations
+# Convertir a los valores que usan las funciones
 inputs = Matrix{Float32}(inputs)
 targets = vec(String.(targets))
 
+# ------------------------------------------------------------------
+# Plots
+# ------------------------------------------------------------------
+colors = [:lightblue, :red, :green, :yellow, :orange, :purple, :cyan]
+# Generamos el plot de la distribucion base de las variables
 class_counts = countmap(targets)
-println("Counts for each class: ", class_counts)
+class_labels = collect(keys(class_counts))
+class_instances = collect(values(class_counts))
+original_distribution = bar(class_labels, class_instances, color=colors,
+                              legend=false, ylabel="Number of Instances",
+                              xlabel="Class", title="Class Distribution in Dataset")
 
-function manual_undersample(features, targets)
-    counts = countmap(targets)
-    min_count = minimum(values(counts))
-    
-    indices = Int[]
-    for class in keys(counts)
-        class_indices = findall(t -> t == class, targets)
-        sampled_indices = sample(class_indices, min_count, replace=false)
-        append!(indices, sampled_indices)
-    end
-    
-    return features[indices, :], targets[indices]
-end
+# Balanceamos las variables (usamos undersample al haber una gran diferencia entre los valores)
+inputs, targets = manual_undersample(inputs, targets)  # Valor minimo = 522
+class_counts = countmap(targets)
+class_labels = collect(keys(class_counts))
+class_instances = collect(values(class_counts))
+balance_distribution = bar(class_labels, class_instances, color=colors,
+                              legend=false, ylabel="Number of Instances",
+                              xlabel="Class", title="Class Distribution in Dataset")
 
-inputs, targets = manual_undersample(inputs, targets)
-println("Counts after manual undersampling: ", countmap(targets))
-inputs
-# Create histograms for each column
-p1 = plot(layout = (6, 1))
-for (i, col_name) in enumerate(input_names)
-    histogram!(p1, inputs[:, i], bins=30, title="Histogram of $(col_name)", label=col_name)
-end
-# Create boxplots for each column
-p2 = plot(layout = (6, 1))
-for (i, col_name) in enumerate(input_names)
-    boxplot!(p2, inputs[:, i], title="Boxplot of $(col_name)", label=col_name)
-end
-# Display plots
-plot(p1, p2, layout = (2, 1), size = (600, 1200))
-
-# Normalization
-min_vals, max_vals = calculateMinMaxNormalizationParameters(inputs)
-mean_vals, std_vals = calculateZeroMeanNormalizationParameters(inputs)
-normalize_data = normalizeMinMax!(inputs, (min_vals, max_vals))
-
-# Correlation matrix of normalized data
+# Histograma de cada variable
+histograms = [histogram(inputs[:, i], bins=30, title="Histogram of $(input_names[i])", label=input_names[i], legend=:outerright) for i in 1:(length(input_names))]
+# Boxplot de cada variable
+boxplots = [boxplot([input_names[i]], inputs[:, i], title="Boxplot of $(input_names[i])", label=input_names[i], legend=:outerright) for i in 1:(length(input_names))]
+# Matriz de correlacion
 cor_matrix = cor(inputs)
-# Plot the correlation matrix
-heatmap(cor_matrix, title = "Feature Correlation Matrix",
+# Heatmap
+hm = heatmap(cor_matrix, title = "Feature Correlation Matrix",
         xticks = (1:length(input_names), input_names),
         yticks = (1:length(input_names), input_names),
-        color = :coolwarm)
+        color = :coolwarm,
+        size=(1000,1000))
+
+
 # ------------------------------------------------------------------
-# Model Evaluation Setup
+# Nomralization
+# ------------------------------------------------------------------
+min_vals, max_vals = calculateMinMaxNormalizationParameters(inputs)
+# mean_vals, std_vals = calculateZeroMeanNormalizationParameters(inputs)
+normalize_data = normalizeMinMax!(inputs, (min_vals, max_vals))
+
+# ------------------------------------------------------------------
+# Model Setup
 # ------------------------------------------------------------------
 num_folds = 5
 crossValidationIndices = crossvalidation(targets, num_folds)
-
+topologies = [[20,10],
+            [10, 10],
+            [10, 15],
+            [30, 20],
+            [15, 15],
+            [50, 25],
+            [40, 20],
+            [25, 15]]
 model_configurations = Dict(
-    # Generar yo las topologias
-    # :ANN => [Dict("topology" => [rand(5:15), rand(3:10)]) for _ in 1:8],  # 8 random configurations between 1 and 2 layers
-    :SVC => [Dict("kernel" => k, "C" => c,  "gamma" => "auto", "coef0" => 0.5, "degree" => 3) for k in ["linear", "rbf", "poly", "sigmoid"] for c in [2, 3]],  # 8 configurations
-    :DecisionTreeClassifier => [Dict("max_depth" => d) for d in 4:12],  # 8 depths
-    :KNeighborsClassifier => [Dict("n_neighbors" => k) for k in 4:12]  # 8 different k values
+    :ANN => [Dict("topology" => t) for t in topologies],  # 8 configuraciones
+    :SVC => [Dict("kernel" => k, "C" => c,  "gamma" => "auto", "coef0" => 0.5, "degree" => 3) for k in ["linear", "rbf", "poly", "sigmoid"] for c in [2, 3]],  # 8 configuraciones
+    :DecisionTreeClassifier => [Dict("max_depth" => d) for d in 4:11],  # 8 profundidades
+    :KNeighborsClassifier => [Dict("n_neighbors" => k) for k in 4:11]  # 8 valores de vecinos
 )
 
 # ------------------------------------------------------------------
 # Model Training and Evaluation
 # ------------------------------------------------------------------
 all_results = Dict()
-
-start = now()
 model_configuration_array = collect(pairs(model_configurations))
+# Utilizamos threads para acelerar levemente la ejecucion
 Threads.@threads for (modeltype, configs) in model_configuration_array
     model_results = []
     for config in configs
+        println("Current Model: $modeltype, Params: $config")
         result = modelCrossValidation(modeltype, config, inputs, targets, crossValidationIndices)
+        println("Result: $result")
         push!(model_results, (config, result))
-        println("Current Model: $modeltype, Params: $config, Result: $result\n")
     end
     all_results[modeltype] = model_results
 end
-end_time = now()
-total_duration = (end_time - start) / Millisecond(60000)  # Convert to minutes
-println("Total Runtime: $total_duration minutes")
+
+# Mostrar los resultados en un df
+column_names = ["Model", "Params", "Mean Accuracy", "Std Accuracy"]
+df_result = DataFrame(Model=String[], Params=Any[], Mean_Accuracy=Float64[], Std_Accuracy=Float64[])
+for (modeltype, results) in all_results
+    for result in results
+        config = result[1]
+        mean_acc = result[2][1][1]
+        std_acc = result[2][1][2]
+        push!(df_result, (String(modeltype), config, mean_acc, std_acc))
+    end
+end
+# Ordenar por Mean Accuracy
+sorted_df = sort(df_result, :Mean_Accuracy, rev=true)
 
 # ------------------------------------------------------------------
-# Finding Best Configurations and Plotting
+# Accuracy Comparation
 # ------------------------------------------------------------------
 best_configs = Dict()
 for (modeltype, results) in all_results
-    best_result = sort(results, by=x -> x[2][1][1], rev=true)[1]  # Sort by mean accuracy, assuming result structure as before
+    # Ordenamos los resultados para cada modelo y cojemos el mejor
+    best_result = sort(results, by=x -> x[2][1][1], rev=true)[1]
     best_configs[modeltype] = best_result
 end
 
-# Function to format configuration details for readability
-function format_config_label(config)
-    return join(["$key=$(isa(value, Number) ? round(value, digits=3) : value)" for (key, value) in config], ", ")
+# Obtenemos los modelos del Dict para poder graficar
+model_types = [string(k) for k in keys(best_configs)]
+# Hacemos lo mismo con las accuracies
+accuracies = [v[2][1][1] for v in values(best_configs)]
+
+# Arreglamos las graficas para que se vean bien
+min_accuracy, max_accuracy = minimum(accuracies), maximum(accuracies)
+padding = (max_accuracy - min_accuracy) * 0.1
+ylims_range = (min_accuracy - padding, max_accuracy + padding * 2)
+
+acc_comparation = bar(model_types, accuracies, legend=false,
+    ylabel="Accuracy (%)", xlabel="Model Type",
+    title="Comparison of Model Accuracies",
+    ylims=ylims_range,  # Adjusted ylims based on data
+    yticks=round(min_accuracy - padding, digits=3):0.005:round(max_accuracy + padding * 2, digits=3),
+    bar_width=0.5,  # Wider bars for better visibility
+    color=[:lightblue, :lightgreen, :lightcoral],  # Different colors for each bar
+    size=(800, 600))
+
+# Para cada barra añadimos el porcentaje    
+annotate!([(i, accuracies[i] + 0.0002, text(string(round(accuracies[i] * 100, digits=2)) * "%", 10)) for i in 1:(length(accuracies))])
+
+# ------------------------------------------------------------------
+# Save the Plots
+# ------------------------------------------------------------------
+CSV.write("results.csv", sorted_df)
+
+savefig(original_distribution, "photos\\original_distribution.png")
+savefig(balance_distribution, "photos\\balance_distribution.png")
+savefig(hm, "photos\\heatmap.png")
+savefig(acc_comparation, "photos\\acc_comparation.png")
+
+# Histograms
+for (i, histogram_plot) in enumerate(histograms)
+    savefig(histogram_plot, "photos\\histogram_$(input_names[i]).png")
 end
 
-
-# Extracting and formatting best configuration results
-mean_accuracies = [round(res[2][1][1], digits=5) for res in values(best_configs)]  # Round the accuracies for higher precision
-formatted_labels = [string(key, " - ", format_config_label(val[1])) for (key, val) in best_configs]
-
-# Create the plot
-bar_plot = bar(mean_accuracies, label=formatted_labels, title="Best Model Configuration Comparison",
-           xlabel="Models", ylabel="Mean Accuracy", size=(800, 600))
+# Boxplots
+for (i, boxplot_plot) in enumerate(boxplots)
+    savefig(boxplot_plot, "photos\\boxplot_$(input_names[i]).png")
+end

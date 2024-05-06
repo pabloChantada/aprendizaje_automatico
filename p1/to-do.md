@@ -1,1 +1,0 @@
-- Análisis bibliográfico: al menos 8 trabajos sobre la BD
