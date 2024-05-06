@@ -1,6 +1,17 @@
 # ------------------------------------------------------------------
 # Dependencies
 # ------------------------------------------------------------------
+#=
+# Descomentar si es necesario instalar alguna de estas librearias
+# ------------------------------------------------------------------
+using Pkg
+Pkg.add("XLSX")
+Pkg.add("DataFrames")
+Pkg.add("Plots")
+Pkg.add("StatsPlots")
+Pkg.add("StatsBase")
+Pkg.add("CSV")
+=#
 include("functions.jl")
 using XLSX
 using DataFrames
@@ -95,8 +106,9 @@ model_configurations = Dict(
 # ------------------------------------------------------------------
 all_results = Dict()
 model_configuration_array = collect(pairs(model_configurations))
-# Utilizamos threads para acelerar levemente la ejecucion
-Threads.@threads for (modeltype, configs) in model_configuration_array
+# Ejecutamos todos los modelos con sus configuraciones
+# Tiempo medio de ANN en secuencial -> 20 min por configuracion
+for (modeltype, configs) in model_configuration_array
     model_results = []
     for config in configs
         println("Current Model: $modeltype, Params: $config")
