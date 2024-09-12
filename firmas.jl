@@ -33,9 +33,18 @@ end;
 
 function loadImage(imageName::String, datasetFolder::String;
     datasetType::DataType=Float32, resolution::Int=128)
-    #
-    # Codigo a desarrollar
-    #
+    imageFile = joinpath(datasetFolder, imageName * ".tif")
+
+    if !isfile(imageFile)
+        return nothing
+    end
+
+    image = load(imageFile)
+    image = Gray.(image) # Convierte la imagen a escala de grises
+    image = imresize(image, (resolution, resolution)) # Cambia la resolución de la imagen
+    image = convert(Array{datasetType}, image) # Cambia el tipo de datos de la imagen
+
+    return image
 end;
 
 
@@ -50,10 +59,17 @@ end;
 
 function loadImagesNCHW(datasetFolder::String;
     datasetType::DataType=Float32, resolution::Int=128)
-    #
-    # Codigo a desarrollar
-    #
+    # Obtener los nombres de archivos sin extensión .tif en la carpeta
+    imageNames = fileNamesFolder(datasetFolder, ".tif")
+    # Cargar todas las imágenes usando broadcast
+    images = loadImage.(imageNames, Ref(datasetFolder); datasetType=datasetType, resolution=resolution)
+
+    validImages = filter(x -> x !== nothing, images)
+    imagesNCHW = convertImagesNCHW(validImages)
+
+    return imagesNCHW
 end;
+
 
 
 showImage(image      ::AbstractArray{<:Real,2}                                      ) = display(Gray.(image));
