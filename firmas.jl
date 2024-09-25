@@ -456,19 +456,45 @@ end;
 
 
 
+using Random
 
-
-function addNoise(datasetNCHW::AbstractArray{<:Bool,4}, ratioNoise::Real)
-    #
-    # Codigo a desarrollar
-    #
+function addNoise(datasetNCHW::AbstractArray{<:Bool, 4}, ratioNoise::Real)
+    noiseSet = copy(datasetNCHW)
+    # Numero total de pixeles
+    total_pixels = length(noiseSet)
+    # Calculo de los índices de los píxeles a modificar
+    pixels_to_change = Int(round(total_pixels * ratioNoise))
+    indices = shuffle(1:total_pixels)[1:pixels_to_change]
+    # Modificar los píxeles en los índices seleccionados (invertir su valor)
+    noiseSet[indices] .= .!noiseSet[indices]
+    return noiseSet
 end;
+
+datasetFolder = "C:/Users/celes/Downloads/FIC/3CURSO/5Q/Modelos_Avanzados_AA/PRACTICA1/2-cuatri"
+images = loadImagesNCHW(datasetFolder; resolution=128)
+
+println("Imágenes originales:")
+showImage(images)
+
+noisy_images = addNoise(images, 0.2)
+
+println("Imágenes con ruido:")
+showImage(noisy_images)
+
 
 function cropImages(datasetNCHW::AbstractArray{<:Bool,4}, ratioCrop::Real)
-    #
-    # Codigo a desarrollar
-    #
+    croppedSet = copy(datasetNCHW)
+    # Obtener el tamaño de las imágenes
+    (_, _, height, width) = size(croppedSet)
+    # Calcular el número de píxeles que se deben conservar
+    numPixelsToKeep = Int(round(width * (1 - ratioCrop)))
+    # Crear un indice de la parte derecha a poner a 0
+    mask = hcat(ones(Bool, numPixelsToKeep), zeros(Bool, width - numPixelsToKeep))
+    # Aplicar la mascara a la parte derecha de cada imagen
+    croppedSet .= croppedSet .* reshape(mask, 1, 1, height, width)
+    return croppedSet
 end;
+
 
 function randomImages(numImages::Int, resolution::Int)
     #
