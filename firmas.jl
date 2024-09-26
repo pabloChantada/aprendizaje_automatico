@@ -480,14 +480,10 @@ end;
 function cropImages(datasetNCHW::AbstractArray{<:Bool,4}, ratioCrop::Real)
     croppedSet = copy(datasetNCHW)
     # Obtener el tamaño de las imágenes
-    (_, _, height, width) = size(croppedSet)
+    (_, _, _, width) = size(croppedSet)
     # Calcular el número de píxeles que se deben conservar
-    numPixelsToKeep = Int(round(width * (1 - ratioCrop)))
-    # Crear un indice de la parte derecha a poner a 0
-    mask = hcat(ones(Bool, numPixelsToKeep), zeros(Bool, width - numPixelsToKeep))
-    # Aplicar la mascara a la parte derecha de cada imagen
-    croppedSet .= croppedSet .* reshape(mask, 1, 1, height, width)
-    return croppedSet
+    pixels_to_keep = Int(round(width * (1 - ratioCrop)))
+    return croppedSet[:,:, :, pixels_to_keep:end] .= 0
 end;
 
 function randomImages(numImages::Int, resolution::Int)
