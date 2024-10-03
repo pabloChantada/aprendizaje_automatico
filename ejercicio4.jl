@@ -26,6 +26,10 @@ end;
 
 function batchLength(batch::Batch) 
     batchInputs = batchInputs(batch)
-    lenght = size(batchInputs, 1)
-    return lenght
+    lenghtInputs = size(batchInputs, 1)
+
+    batchTargets = batchTargets(batch)
+    lenghtTargets = lenght(batchTargets)
+
+    return lenghtInputs == lenghtTargets ? lenghtInputs : error("Las salidas y entradas no coiciden en tamaño")
 end;
