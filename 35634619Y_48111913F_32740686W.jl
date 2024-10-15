@@ -276,7 +276,6 @@ function addClassCascadeNeuron(previousANN::Chain; transferFunction::Function=σ
     return ann
 end;
 
-
 function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}, trainOnly2LastLayers::Bool;
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.001, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
 
@@ -284,7 +283,6 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     (inputs, targets) = trainingDataset;
     
     # Check if the inputs and targets are of the same sizes
-    # @assert(size(inputs,2)==size(targets,2));
 
     # Loss function
     loss(model,x,y) = (size(y,1) == 1) ? Losses.binarycrossentropy(model(x),y) : Losses.crossentropy(model(x),y);
@@ -305,20 +303,21 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     end
 
     # Train until a stop condition is reached
-    while (numEpoch<maxEpochs) && (trainingLoss>minLoss) 
+    while (numEpoch < maxEpochs) && (trainingLoss > minLoss) 
+
+        numEpoch += 1;
 
         # Train cycle (0 if its the first one)
         Flux.train!(loss, ann, [(inputs, targets)], opt_state);
 
-        numEpoch += 1;
         # Calculamos las metricas en este ciclo
         trainingLoss = loss(ann, inputs, targets);
         push!(trainingLosses, trainingLoss);
         # println("Epoch ", numEpoch, ": loss: ", trainingLoss);
         
         # Calculate loss in the window for early stopping
-        if numEpoch >= lossChangeWindowSize
-            lossWindow = trainingLosses[end-lossChangeWindowSize+1:end];
+        if numEpoch > lossChangeWindowSize
+            lossWindow = trainingLosses[end - lossChangeWindowSize + 1: end];
             minLossValue, maxLossValue = extrema(lossWindow);
 
             if ((maxLossValue - minLossValue) / minLossValue) <= minLossChange
@@ -329,8 +328,9 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     
     end;
 
-    return (ann, trainingLosses);
+    return trainingLosses;
 end;
+
 
 
 function trainClassCascadeANN(maxNumNeurons::Int,
@@ -352,7 +352,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     ann = newClassCascadeNetwork(size(inputs,1),size(targets,1))
 
     # Train the first ANN
-    ann, trainingLosses = trainClassANN!(ann, (inputs, targets), false,
+    trainingLosses = trainClassANN!(ann, (inputs, targets), false,
         maxEpochs=maxEpochs, minLoss=minLoss, learningRate=learningRate,
         minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
 
@@ -363,7 +363,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
 
         if neuronIdx > 1
             # Train freezing all layers except the last two
-            ann, lossVector = trainClassANN!(ann, (inputs, targets), true,
+            lossVector = trainClassANN!(ann, (inputs, targets), true,
                 maxEpochs=maxEpochs, minLoss=minLoss, learningRate=learningRate,
                 minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
             # Concatenate loss vectors, skipping the first value
@@ -371,7 +371,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
         end
     
         # Train the entire ANN
-        ann, lossVectorFull = trainClassANN!(ann, (inputs, targets), false,
+        lossVectorFull = trainClassANN!(ann, (inputs, targets), false,
             maxEpochs=maxEpochs, minLoss=minLoss, learningRate=learningRate,
             minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
         # Concatenate loss vectors, skipping the first value
@@ -395,6 +395,8 @@ function trainClassCascadeANN(maxNumNeurons::Int,
                                 transferFunction=transferFunction, maxEpochs=maxEpochs, minLoss=minLoss, 
                                 learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
 end
+    
+
     
 
 # ----------------------------------------------------------------------------------------------
@@ -576,59 +578,139 @@ using ScikitLearn: @sk_import, fit!, predict
 
 Batch = Tuple{AbstractArray{<:Real,2}, AbstractArray{<:Any,1}}
 
+function batchInputs(batch::Batch) 
+    inputs = batch[1]
 
-function batchInputs(batch::Batch)
-    #
-    # Codigo a desarrollar
-    #
+    return inputs
 end;
 
-function batchTargets(batch::Batch)
-    #
-    # Codigo a desarrollar
-    #
+
+function batchTargets(batch::Batch) 
+    targets = batch[2]
+    return targets
 end;
 
-function batchLength(batch::Batch)
-    #
-    # Codigo a desarrollar
-    #
+
+function batchLength(batch::Batch) 
+    inputs = batchInputs(batch)
+    lenghtInputs = size(inputs, 1)
+
+    targets = batchTargets(batch)
+    lenghtTargets = length(targets)
+                
+    return lenghtInputs == lenghtTargets ? lenghtInputs : error("Las salidas y entradas no coiciden en tamaño")
 end;
 
-function selectInstances(batch::Batch, indices::Any)
-    #
-    # Codigo a desarrollar
-    #
-end;
+function selectInstances(batch::Batch, indices::Any) 
+    # Extraer entradas y salidas del batch
+    inputs = batchInputs(batch)
+    targets = batchTargets(batch)
+
+    # Seleccionar las instancias correspondientes
+    selected_inputs = inputs[indices, :]
+    selected_targets = targets[indices]
+
+    # Devolver un nuevo batch con las instancias seleccionadas
+    return (selected_inputs, selected_targets)
+end
+
 
 function joinBatches(batch1::Batch, batch2::Batch)
-    #
-    # Codigo a desarrollar
-    #
+    new_inputs = vcat(batchInputs(batch1), batchInputs(batch2))
+    new_targets = vcat(batchTargets(batch1), batchTargets(batch2))
+    return (new_inputs, new_targets)
 end;
 
-
 function divideBatches(dataset::Batch, batchSize::Int; shuffleRows::Bool=false)
-    #
-    # Codigo a desarrollar
-    #
+    inputs = batchInputs(dataset)
+    targets = batchTargets(dataset)
+    rows = size(inputs, 1)
+    
+    # Si shuffleRows es verdadero, desordenamos las filas
+    if shuffleRows
+        indices = shuffle(1:rows)
+        inputs = inputs[indices, :]
+        targets = targets[indices]
+    end
+
+    # Dividir el conjunto de datos en particiones (lotes)
+    #=
+    * partition(1:size(inputs, 1), batchSize)] -> devuelve un batch de tamaño x con los indices de cada fila
+    * partition(1:10, 3)
+    * Primer lote: [1, 2, 3]
+    * Segundo lote: [4, 5, 6]
+    * Tercer lote: [7, 8, 9]
+    =#
+    # Usar partition para dividir el conjunto de datos en lotes de tamaño batchSize
+    partitions = Iterators.partition(1:rows, batchSize)
+    
+    # Crear los lotes
+    batches = [selectInstances((inputs, targets), collect(p)) for p in partitions]
+    
+    #= Manejar el último lote si no es divisible por batchSize
+    remaining = rows % batchSize
+    if remaining > 0
+        # Selecionamos la ultima instancia 
+        last_batch_indices = (rows - remaining + 1):rows
+        push!(batches, selectInstances((inputs, targets), collect(last_batch_indices)))
+    end
+    =#
+    
+    return batches
 end;
 
 function trainSVM(dataset::Batch, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.,
     supportVectors::Batch=( Array{eltype(dataset[1]),2}(undef,0,size(dataset[1],2)) , Array{eltype(dataset[2]),1}(undef,0) ) )
-    #
-    # Codigo a desarrollar
-    #
+
+    # Concatenar los vectores de soporte con el dataset original si se han pasado
+    trainingData = isnothing(supportVectors) ? dataset : joinBatches(supportVectors, dataset)
+
+    inputs = batchInputs(trainingData)
+    targets = batchTargets(trainingData)
+
+    # Entrenar el modelo
+    model = SVC(kernel=kernel, C=C, gamma=gamma, coef0=coef0, degree=degree, random_state=1)
+    fit!(model, inputs, targets)
+
+    indicesNewSupportVectors = sort(model.support_.+1); 
+
+    # Número de vectores de soporte previos
+    numOldSupportVectors = isnothing(supportVectors) ? 0 : batchLength(supportVectors)
+
+    # Separar los índices en: vectores de soporte antiguos y los nuevos
+    oldSupportIndices = indicesNewSupportVectors[indicesNewSupportVectors .<= numOldSupportVectors]
+    newSupportIndices = indicesNewSupportVectors[indicesNewSupportVectors .> numOldSupportVectors] .- numOldSupportVectors
+    
+    # Crear los lotes de vectores de soporte
+    oldSupportVectorsBatch = isnothing(supportVectors) ? nothing : selectInstances(supportVectors, oldSupportIndices)
+    newSupportVectorsBatch = selectInstances(dataset, newSupportIndices)
+    
+    # Concatenar los lotes de vectores de soporte
+    finalSupportVectorsBatch = isnothing(oldSupportVectorsBatch) ? newSupportVectorsBatch : joinBatches(oldSupportVectorsBatch, newSupportVectorsBatch)
+    
+    # Devolver el modelo, los vectores de soporte y el tuple con los índices
+    return model, finalSupportVectorsBatch, (oldSupportIndices, newSupportIndices)
 end;
+
 
 function trainSVM(batches::AbstractArray{<:Batch,1}, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
-    #
-    # Codigo a desarrollar
-    #
-end;
+    
+    supportVectors = nothing
+    model = nothing
+    for batch in batches
+        if isnothing(supportVectors)
+            # Si no hay vectores de soporte aún, entrenar el modelo sin ellos
+            model, supportVectors, _ = trainSVM(batch, kernel, C; degree=degree, gamma=gamma, coef0=coef0)
+        else
+            # Si ya hay vectores de soporte, usarlos en el entrenamiento
+            model, supportVectors, _ = trainSVM(batch, kernel, C; degree=degree, gamma=gamma, coef0=coef0, supportVectors=supportVectors)
+        end
+    end
 
+    return model
+end;
 
 
 
@@ -665,21 +747,29 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
 end;
 
 function euclideanDistances(memory::Batch, instance::AbstractArray{<:Real,1})
-    #
-    # Codigo a desarrollar
-    #
+    matriz_entradas = batchInputs(memory)  
+    instance_transpuesta = instance'        
+    diferencia = matriz_entradas .- instance_transpuesta  
+    diferencia_cuadrado = diferencia .^ 2   
+    suma_filas = sum(diferencia_cuadrado, dims=2)  
+    distancias = sqrt.(suma_filas)          
+    distancias_vector = vec(distancias)      
+
+    return distancias_vector
 end;
 
 function predictKNN(memory::Batch, instance::AbstractArray{<:Real,1}, k::Int)
-    #
-    # Codigo a desarrollar
-    #
+    distance = euclideanDistances(memory,instance)
+    indices_vecinos = partialsortperm(distance, k) 
+    salidas_vecinos = memory[2][indices_vecinos]
+    valor_prediccion = mode(salidas_vecinos)
+    return valor_prediccion 
 end;
 
 function predictKNN(memory::Batch, instances::AbstractArray{<:Real,2}, k::Int)
-    #
-    # Codigo a desarrollar
-    #
+    
+    predicciones = [predictKNN(memory, instance, k) for instance in eachrow(instances)]  
+    return predicciones 
 end;
 
 function streamLearning_KNN(datasetFolder::String, windowSize::Int, batchSize::Int, k::Int)
