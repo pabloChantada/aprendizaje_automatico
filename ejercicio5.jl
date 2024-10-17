@@ -47,7 +47,7 @@ println(distancias)
 
 function predictKNN(memory::Batch, instance::AbstractArray{<:Real,1}, k::Int) 
     distance = euclideanDistances(memory,instance)
-    indices_vecinos = partialsortperm(distance, k) 
+    indices_vecinos = partialsortperm(distance, 1:k) 
     salidas_vecinos = memory[2][indices_vecinos]
     valor_prediccion = mode(salidas_vecinos)
     return valor_prediccion 
