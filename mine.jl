@@ -8,7 +8,6 @@ Random.seed!(172)
 PATH = "Datos_Práctica_Evaluación_1.csv"
 data = CSV.read(PATH,DataFrame)
 
-# Son 561 variables quitar el header y no contar la de salida
 function csvDescription(csv)
     println("Variables: ", size(csv, 2))    # Número de columnas
     println("Attributes: ", size(csv, 1))   # Número de filas
@@ -51,6 +50,7 @@ end
 getNullValues(data)
 
 
+
 # Fill the empty data or anything else
 function preprocessData(arguments)
 
@@ -77,6 +77,7 @@ function preprocessData(arguments)
     scaler = StandardScaler()
     data_scaled = transform(fit!(machine(scaler, data_encoded)), data_encoded) 
 end
+
 
 
 # HOLD-OUT del 10% -> individual-wise | Seed 172
@@ -171,6 +172,6 @@ end;
 function applyMinMax(dataset)
     min_col, max_col = calculateMinMaxNormalizationParameters(dataset)    
     normalizeMinMax(dataset, (min_col, max_col))
-end
+end;
 
 
