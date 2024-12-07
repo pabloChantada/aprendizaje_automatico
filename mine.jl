@@ -46,37 +46,28 @@ function getNullValues(data::AbstractDataFrame)
     println("Porcentaje total de valores nulos en el DataFrame: $(round(total_pct_nulls, digits=4))%")
 end
 
-
 getNullValues(data)
 
 
 
 # Fill the empty data or anything else
-function preprocessData(arguments)
-
-    # 1. Separate numeric and categorical columns
-    num_cols = names(select(data, Real))
+function preprocessData(data::DataFrame)
+    # Separar columnas numéricas y categóricas
+    num_cols = [col for col in names(data) if eltype(data[!, col]) <: Real]
     cat_cols = setdiff(names(data), num_cols)
-
-    # 2. Handle missing values
-    # For numeric: impute with median
+    
+    # Imputar valores faltantes
     for col in num_cols
-       data[!, col] = coalesce.(data[:, col], median(skipmissing(data[:, col])))
+        data[!, col] = coalesce.(data[!, col], median(skipmissing(data[!, col])))
     end
 
-    # For categorical: impute with mode
     for col in cat_cols
-       data[!, col] = coalesce.(data[:, col], mode(skipmissing(data[:, col])))
+        data[!, col] = coalesce.(data[!, col], mode(skipmissing(data[!, col])))
     end
-
-    # 3. Encode categorical variables
-    encoder = CategoricalEncoder()
-    data_encoded = transform(fit!(machine(encoder, data)), data)
-
-    # 4. Scale numeric features
-    scaler = StandardScaler()
-    data_scaled = transform(fit!(machine(scaler, data_encoded)), data_encoded) 
+    
+    return data  # Devuelve el DataFrame procesado
 end
+
 
 
 
