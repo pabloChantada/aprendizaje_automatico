@@ -49,7 +49,6 @@ end
 getNullValues(data)
 
 
-
 # Fill the empty data or anything else
 function preprocessData(data::DataFrame)
     # Separar columnas numéricas y categóricas
@@ -164,5 +163,94 @@ function applyMinMax(dataset)
     min_col, max_col = calculateMinMaxNormalizationParameters(dataset)    
     normalizeMinMax(dataset, (min_col, max_col))
 end;
+
+
+using DataFrames
+using Random
+using Statistics
+
+
+# Función ANOVA para filtrar características
+function anova_filter(data::DataFrame, target_col::Symbol; alpha::Float64=0.05)
+    # Separar las variables predictoras (X) y la variable objetivo (Y)
+    X = select(data, Not(target_col))   # Excluimos la columna de la clase
+    y = data[!, target_col]             # Columna de la clase
+
+    # Crear una lista para almacenar los p-valores de cada característica
+    p_values = []
+
+    # Realizamos ANOVA para cada característica
+    for col in names(X)
+        # Agrupar los valores de la característica por cada clase en la variable objetivo
+        grouped_data = groupby(data, target_col)
+        groups = [df[!, col] for df in grouped_data]  # Extraer las columnas para ANOVA
+
+        # Realizamos el ANOVA y calculamos el p-valor
+        f_statistic, p_value = oneway_anova(groups)
+
+        # Guardamos el p-valor en la lista
+        push!(p_values, (col, p_value))
+    end
+
+    # Filtramos las características basándonos en el p-valor (usamos el umbral alpha)
+    selected_features = [col for (col, p_value) in p_values if p_value < alpha]
+
+    # Mostrar resultados
+    println("Características seleccionadas basadas en ANOVA:")
+    println(selected_features)
+
+    return selected_features
+end
+
+# Función que realiza ANOVA (de un solo factor)
+function oneway_anova(groups::Vector)
+    # Usamos la función anova de Julia, calculamos la estadística F y el p-valor
+    n_groups = length(groups)
+    means = map(mean, groups)
+    grand_mean = mean(vcat(groups...))
+    
+    # Cálculo de la variabilidad entre los grupos
+    ss_between = sum(length(g) * (mean(g) - grand_mean)^2 for g in groups)
+    df_between = n_groups - 1
+    
+    # Cálculo de la variabilidad dentro de los grupos
+    ss_within = sum(sum((x .- mean(g)).^2) for (x, g) in zip(groups, groups))
+    df_within = sum(length(g) - 1 for g in groups)
+    
+    # Cálculo de la estadística F
+    ms_between = ss_between / df_between
+    ms_within = ss_within / df_within
+    f_statistic = ms_between / ms_within
+    
+    # Calcular el p-valor usando la distribución F de `Distributions`
+    f_dist = FDist(df_between, df_within)  # Usar `FDist`
+    p_value = 1 - cdf(f_dist, f_statistic)  # Usar la función CDF para obtener el p-valor
+
+    return f_statistic, p_value
+end
+
+# Función de test
+function test_anova_filter()
+    # Generar datos de ejemplo
+    N = 120
+    class_labels = ["X", "Y", "Z"]
+    X1 = vcat(randn(40) .+ 2, randn(40) .+ 6, randn(40) .+ 10)  # Característica 1 con diferentes medias
+    X2 = vcat(randn(40) .+ 3, randn(40) .+ 7, randn(40) .+ 12)  # Característica 2 con diferentes medias
+    X3 = vcat(randn(40) .+ 5, randn(40) .+ 8, randn(40) .+ 11)  # Característica 3 con diferentes medias
+    y = vcat(repeat(["X"], 40), repeat(["Y"], 40), repeat(["Z"], 40))  # Etiquetas de clase
+
+    # Crear el DataFrame con las características y etiquetas
+    data = DataFrame(Feature1 = X1, Feature2 = X2, Feature3 = X3, Class = y)
+    
+    # Aplicar el filtro ANOVA
+    selected_features = anova_filter(data, :Class, alpha=0.05)
+    
+    # Mostrar las características seleccionadas
+    println("Características seleccionadas para el modelo:", selected_features)
+end
+
+# Llamar a la función de test
+test_anova_filter()
+
 
 
