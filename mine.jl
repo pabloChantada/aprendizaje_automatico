@@ -1,54 +1,58 @@
 using DataFrames
 using CSV
 using Random
+using DataFrames, Statistics, StatsBase, MLJ
 Random.seed!(172)
 
-#=====================================
 # Load the data 
-#=====================================
+PATH = "Datos_Práctica_Evaluación_1.csv"
+data = CSV.read(PATH,DataFrame)
 
 # Son 561 variables quitar el header y no contar la de salida
 function csvDescription(csv)
-    println("Variables: ", size(csv, 2))  # Número de columnas
-    println("Attributes: ", size(csv, 1))  # Número de filas
-    println("Individuals: ", length(unique(csv[:, 1])))  # Valores únicos en la primera columna
-    println("Classes: ", length(unique(csv[:, end])), " | ", unique(csv[:, end]))  # Última columna
+    println("Variables: ", size(csv, 2))    # Número de columnas
+    println("Attributes: ", size(csv, 1))   # Número de filas
+    println("Individuals: ", length(unique(csv[:, 1])))     # Valores únicos en la primera columna
+    println("Classes: ", length(unique(csv[:, end])), " | ", unique(csv[:, end]))   # Última columna
 end
-
-PATH = "Datos_Práctica_Evaluación_1.csv"
-data = CSV.read(PATH,DataFrame)
 
 csvDescription(data)
 describe(data)
 
 
-PATH = "Datos_Práctica_Evaluación_1.csv"
-data = CSV.read(PATH,DataFrame)
-
-#=====================================
 # Check percentage of NULL values  in the sistem
-#=====================================
-
-function getNullValues(csv)
+function getNullValues(data::AbstractDataFrame)
+    println("Columnas detectadas: ", names(data)) # Confirmar nombres de columnas
+    println("Número de filas: ", nrow(data))      # Confirmar tamaño del DataFrame
+    
+    total_nulls = 0  # Inicializar contador total de nulos
+    
     for col in names(data)
-       n_nulls = sum(ismissing.(data[:, col]))
-       pct_nulls = (n_nulls / nrow(data)) * 100
-       println("$col: $(round(pct_nulls, digits=2))%")
+        println("Procesando columna: ", col)     # Confirmar iteración columna por columna
+        
+        # Calcular valores faltantes por columna
+        n_nulls = sum(ismissing.(data[:, col]))
+        pct_nulls = (n_nulls / nrow(data)) * 100
+        total_nulls += n_nulls  # Acumular valores nulos
+        
+        # Mostrar resultados por columna
+        println("$col: $(round(pct_nulls, digits=4))%")
     end
-
-    # Total nulls
-    total_nulls = sum(ismissing.(data)) / (nrow(data) * ncol(data)) * 100
-    println("\nTotal nulls: $(round(total_nulls, digits=2))%")
+    
+    # Calcular porcentaje total de nulos
+    total_elements = nrow(data) * ncol(data)
+    total_pct_nulls = (total_nulls / total_elements) * 100
+    
+    # Mostrar porcentaje total de nulos
+    println("Porcentaje total de valores nulos en el DataFrame: $(round(total_pct_nulls, digits=4))%")
 end
+
 
 getNullValues(data)
 
-#=====================================
-# Fill the empty data or anything else
-#=====================================
 
+# Fill the empty data or anything else
 function preprocessData(arguments)
-    using DataFrames, Statistics, StatsBase, MLJ
 
     # 1. Separate numeric and categorical columns
     num_cols = names(select(data, Real))
@@ -74,11 +78,8 @@ function preprocessData(arguments)
     data_scaled = transform(fit!(machine(scaler, data_encoded)), data_encoded) 
 end
 
-#=====================================
+
 # HOLD-OUT del 10% -> individual-wise | Seed 172
-#=====================================
-
-
 function holdOut(N::Int, P::Real)
     # N -> numero de patrones
     # P -> valor entre 0 y 1, indica el porcentaje para el test
@@ -92,6 +93,7 @@ function holdOut(N::Int, P::Real)
     @assert length(index_test) + length(index_train) == N
     return (index_train, index_test)
 end;
+
 
 function applyHoldOut(arguments)
     # Assuming your data is in a DataFrame called 'data'
@@ -108,16 +110,15 @@ function applyHoldOut(arguments)
     train = data[.!in.(data.ID, Ref(Set(test_individuals))), :]
 end
 
-#=====================================
-# 5-CROSS-VALIDATION -> SEED 172
-#=====================================
 
+# 5-CROSS-VALIDATION -> SEED 172
 function crossvalidation(N::Int64, k::Int64)
     indices = repeat(1:k, Int64(ceil(N/k)));
     indices = indices[1:N];
     shuffle!(indices);
     return indices;
 end;
+
 
 # Vector
 function crossvalidation(targets::AbstractArray{Bool,1}, k::Int64)
@@ -126,6 +127,7 @@ function crossvalidation(targets::AbstractArray{Bool,1}, k::Int64)
     indices[.!targets] = crossvalidation(sum(.!targets), k);
     return indices;
 end;
+
 
 # Matriz
 function crossvalidation(targets::AbstractArray{Bool,2}, k::Int64)
@@ -141,14 +143,13 @@ function crossvalidation(targets::AbstractArray{Bool,2}, k::Int64)
     return indices;
 end;
 
+
 function apllyCrossValidation(data)
   return crossvalidation(data, 5)  
 end
 
-#=====================================
-# MinMax normalization
-#=====================================
 
+# MinMax normalization
 function normalizeMinMax!(dataset::AbstractArray{<:Real,2}, normalizationParameters::NTuple{2,AbstractArray{<:Real,2}})
     # Normalizar entre el max y el min
     min_values, max_values = normalizationParameters[1], normalizationParameters[2]
@@ -165,6 +166,7 @@ function calculateMinMaxNormalizationParameters(dataset::AbstractArray{<:Real,2}
     max_col = maximum(dataset, dims=1)
     return (min_col, max_col)
 end;
+
 
 function applyMinMax(dataset)
     min_col, max_col = calculateMinMaxNormalizationParameters(dataset)    
