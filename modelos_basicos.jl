@@ -7,6 +7,7 @@ using MLJLinearModels
 using FeatureSelectors  
 using GLM
 using ScikitLearn
+using Distributions
 
 @sk_import feature_selection: mutual_info_classif
 
