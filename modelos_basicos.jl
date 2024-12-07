@@ -138,9 +138,6 @@ function test_mutual_information_filter_sklearn()
     # Crear el DataFrame
     data = DataFrame(Feature1 = X1, Feature2 = X2, Feature3 = X3, Class = y)
 
-    println("Primeras filas del DataFrame:")
-    println(first(data, 5))
-
     # Aplicar el filtro de Información Mutua
     selected_features = mutual_information_filter_sklearn(data, :Class, threshold=0.05)
     println("Características seleccionadas para el modelo:", selected_features)
