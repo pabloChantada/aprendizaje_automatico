@@ -11,41 +11,43 @@ using Distributions
 
 @sk_import feature_selection: mutual_info_classif
 
-include("mine.jl")
-PATH = "Datos_Práctica_Evaluación_1.csv"
-data2 = CSV.read(PATH,DataFrame)
-
-#FILTRADO
-
+# FILTRADO
+# ====================================
 # 1. Sin reducción de dimensionalidad
+# ====================================
+
 function no_reduction(data::DataFrame)
     println("No se aplica reducción de dimensionalidad")
     return data
 end
 
+# ==================
 # 2. Filtrado ANOVA
+# ==================
+
 # Función ANOVA para filtrar características
 function anova_filter(data::DataFrame, target_col::Symbol; alpha::Float64=0.05)
-    
-    X = select(data, Not(target_col))   
-    y = data[!, target_col]             
+    # Separar las variables predictoras (X) y la variable objetivo (Y)
+    X = select(data, Not(target_col))   # Excluimos la columna de la clase
+    y = data[!, target_col]             # Columna de la clase
 
-
+    # Crear una lista para almacenar los p-valores de cada característica
     p_values = []
 
-
+    # Realizamos ANOVA para cada característica
     for col in names(X)
-   
+        # Agrupar los valores de la característica por cada clase en la variable objetivo
         grouped_data = groupby(data, target_col)
-        groups = [df[!, col] for df in grouped_data]  
+        groups = [df[!, col] for df in grouped_data]  # Extraer las columnas para ANOVA
 
+        # Realizamos el ANOVA y calculamos el p-valor
         f_statistic, p_value = oneway_anova(groups)
 
         # Guardamos el p-valor en la lista
         push!(p_values, (col, p_value))
     end
 
-    # Filtramos las características basándonos en el p-valor (usando el umbral alpha)
+    # Filtramos las características basándonos en el p-valor (usamos el umbral alpha)
     selected_features = [col for (col, p_value) in p_values if p_value < alpha]
 
     # Mostrar resultados
@@ -76,38 +78,15 @@ function oneway_anova(groups::Vector)
     f_statistic = ms_between / ms_within
     
     # Calcular el p-valor usando la distribución F de `Distributions`
-    f_dist = FDist(df_between, df_within)  
-    p_value = 1 - cdf(f_dist, f_statistic)  
+    f_dist = FDist(df_between, df_within)  # Usar `FDist`
+    p_value = 1 - cdf(f_dist, f_statistic)  # Usar la función CDF para obtener el p-valor
 
     return f_statistic, p_value
 end
 
-# Función de test
-function test_anova_filter()
-    # Generar datos de ejemplo
-    N = 120
-    class_labels = ["X", "Y", "Z"]
-    X1 = vcat(randn(40) .+ 2, randn(40) .+ 6, randn(40) .+ 10)  # Característica 1 con diferentes medias
-    X2 = vcat(randn(40) .+ 3, randn(40) .+ 7, randn(40) .+ 12)  # Característica 2 con diferentes medias
-    X3 = vcat(randn(40) .+ 5, randn(40) .+ 8, randn(40) .+ 11)  # Característica 3 con diferentes medias
-    y = vcat(repeat(["X"], 40), repeat(["Y"], 40), repeat(["Z"], 40))  # Etiquetas de clase
-
-    # Crear el DataFrame con las características y etiquetas
-    data = DataFrame(Feature1 = X1, Feature2 = X2, Feature3 = X3, Class = y)
-    
-    # Aplicar el filtro ANOVA
-    selected_features = anova_filter(data, :Class, alpha=0.05)
-    
-    # Mostrar las características seleccionadas
-    println("Características seleccionadas para el modelo:", selected_features)
-end
-
-# Llamar a la función de test
-test_anova_filter()     # Este funciona
-
-
-
+# ==============================
 # 3. Filtrado Mutual Information
+# ==============================
 
 function mutual_information_filter_sklearn(data::DataFrame, target_col::Symbol; threshold::Float64=0.05)
     X = Matrix(select(data, Not(target_col)))  
@@ -124,31 +103,9 @@ function mutual_information_filter_sklearn(data::DataFrame, target_col::Symbol; 
     return selected_features
 end
 
-
-# Función de prueba
-function test_mutual_information_filter_sklearn()
-    # Generar datos de ejemplo
-    N = 120
-    class_labels = ["X", "Y", "Z"]
-    X1 = vcat(randn(40) .+ 2, randn(40) .+ 6, randn(40) .+ 10)  # Característica 1 con diferentes medias
-    X2 = vcat(randn(40) .+ 3, randn(40) .+ 7, randn(40) .+ 12)  # Característica 2 con diferentes medias
-    X3 = randn(120)  # Característica irrelevante
-    y = vcat(repeat(["X"], 40), repeat(["Y"], 40), repeat(["Z"], 40))  # Etiquetas de clase
-
-    # Crear el DataFrame
-    data = DataFrame(Feature1 = X1, Feature2 = X2, Feature3 = X3, Class = y)
-
-    # Aplicar el filtro de Información Mutua
-    selected_features = mutual_information_filter_sklearn(data, :Class, threshold=0.05)
-    println("Características seleccionadas para el modelo:", selected_features)
-end
-
-# Llamar a la función de prueba
-test_mutual_information_filter_sklearn()    #Este funciona
-
-
-
+# ===============================
 # 4. RFE con Logistic Regression
+# ===============================
 
 function rfe_logistic_regression(data::DataFrame, target_col::Symbol; threshold::Float64=0.5)
     X = select(data, Not(target_col))  
@@ -188,26 +145,6 @@ function rfe_logistic_regression(data::DataFrame, target_col::Symbol; threshold:
         
         println("Características seleccionadas en esta iteración: ", selected_features)
     end
-    
     return selected_features
 end
-
-# Ejemplo de uso de la función con un dataset de prueba
-function test_rfe_logistic_regression()
-    # Crear un DataFrame de ejemplo
-    data = DataFrame(
-        Feature1 = randn(100),
-        Feature2 = randn(100),
-        Feature3 = randn(100),
-        Feature4 = randn(100),
-        Class = rand([0, 1], 100)  
-    )
-    
-    selected_features = rfe_logistic_regression(data, :Class, threshold=0.5)
-    
-    println("Características seleccionadas para el modelo: ", selected_features)
-end
-
-# Ejecutar la prueba
-test_rfe_logistic_regression() # Esta funciona
 
