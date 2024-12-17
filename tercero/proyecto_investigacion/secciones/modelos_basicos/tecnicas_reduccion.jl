@@ -2,7 +2,7 @@
 # NO aplicar nada, PCA, LDA, ICA, Isomap, LLE
 # Para cada una de estas técnicas represente mediante las dos primeras características conservadas el conjunto de datos 
 
-include("mine.jl")
+include("preparacion.jl")
 include("modelos_basicos.jl")
 PATH = "Datos_Práctica_Evaluación_1.csv"
 

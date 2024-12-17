@@ -11,7 +11,7 @@ using Distributions
 using Test
 
 @sk_import feature_selection: mutual_info_classif
-include("../modelos_basicos.jl")
+include("../modelos_basicos/reduccion_dimensionalidad.jl")
 include("../preparacion.jl")
 
 function test_anova_filter()

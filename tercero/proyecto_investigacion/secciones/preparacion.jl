@@ -1,7 +1,7 @@
 using DataFrames
 using CSV
 using Random
-using DataFrames, Statistics, StatsBase, MLJ
+using DataFrames, Statistics, StatsBase
 Random.seed!(172)
 
 # =======================================
