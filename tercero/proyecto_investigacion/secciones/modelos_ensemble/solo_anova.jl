@@ -5,13 +5,14 @@
     GBM (GradientBoostingClasifier), con 50 estimadores y un learning_rate de 0.2 
 =#
 
-include("preparacion.jl")
-include("modelos_basicos/reduccion_dimensionalidad.jl")
+include("../preparacion.jl")
+include("../modelos_basicos/reduccion_dimensionalidad.jl")
 
 using Statistics
 using DataFrames
 using ScikitLearn: fit!, predict
 using ScikitLearn
+using Plots
 
 # Registrar modelos
 @sk_import ensemble: BaggingClassifier
@@ -90,8 +91,11 @@ function train_ensemble_models(fold)
 
     # Aplicar ANOVA SOLO sobre el conjunto de entrenamiento
     println("\nAplicando Filtrado ANOVA en el conjunto de entrenamiento...")
-    selected_features = anova_filter(fold.train, :Activity)
-    
+    n_features = size(fold.train, 2) - 1  # Restar 1 por la columna de la clase
+    alpha_bonferroni = 0.05 / n_features  # Corrección de Bonferroni
+    selected_features = anova_filter(fold.train, :Activity, alpha= alpha_bonferroni, info=true)
+
+
     # Filtrar los datos de entrenamiento
     X_train_filtered = select(fold.train, [selected_features...])
     y_train = fold.train[:, :Activity]
@@ -110,24 +114,25 @@ function train_ensemble_models(fold)
     models["bagging_knn_10"] = train_bagging_knn(X_train_filtered, y_train, n_estimators=10)
     tiempos["bagging_knn_10"] = round(time() - t_start, digits=2)
     
+    #=
     # Bagging KNN 50
     println("Entrenando Bagging KNN (50 estimadores)...")
     t_start = time()
     models["bagging_knn_50"] = train_bagging_knn(X_train_filtered, y_train, n_estimators=50)
     tiempos["bagging_knn_50"] = round(time() - t_start, digits=2)
     
-    #= AdaBoost
+    # AdaBoost
     println("Entrenando AdaBoost SVM...")
     t_start = time()
     models["adaboost_svm"] = train_adaboost_svm(X_train_filtered, y_train)
     tiempos["adaboost_svm"] = round(time() - t_start, digits=2)
-    =#
 
     # GBM
     println("Entrenando GBM...")
     t_start = time()
     models["gbm"] = train_gbm(X_train_filtered, y_train)
     tiempos["gbm"] = round(time() - t_start, digits=2)
+    =#
 
     # Evaluación
     println("\nEvaluando modelos...")
@@ -219,16 +224,3 @@ for (model, metrics) in results
 end
 
 println("\nTiempo total de ejecución: $(tiempo_total / 60) minutos")
-
-#=
-11. Entrenar con el conjunto completo de entrenamiento (todo lo que componía el 5-fold cross-validation) y testear son el 10% reservado:
-    Coger las 5 mejores combinaciones de los modelos anteriores de clasificación, (1 KNN, 1 SVM, 1 MLP, 1 Bagging y 1 AdaBoosting) 
-    Crear un Random Forest con valor para los estimadores del 500 y profundidad máxima de 10 
-    Crear un Hard Voting con las mejores combinaciones del KNN, SVM y MLP (uno para cada una de las técnicas) 
-    Crear  un  Soft Voting  con las  mejores  combinaciones del  KNN,  SVM  y MLP (uno para cada una de las técnicas) para los pesos coger el porcentaje de 
-        acierto  en  test  de  cada  una  de  las  combinaciones  en  el  5-fold  cross-valiadation 
-    Crear un Ensemble Stacking con MLP como clasificador final, así mismo, use como base las mejores combinaciones del SVM, KNN y MLP 
-    Crear un XGBoost con los valores por defecto 
-    Crear un LightGBM, con los valores por defecto 
-    Crear un Catboost, con los valores por defecto 
-=#

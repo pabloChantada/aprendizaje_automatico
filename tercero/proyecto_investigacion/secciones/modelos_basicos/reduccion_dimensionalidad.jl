@@ -28,8 +28,8 @@ end
 # Función ANOVA para filtrar características
 function anova_filter(data::DataFrame, target_col::Symbol; alpha::Float64=0.05, info::Bool=false)
     # Separar las variables predictoras (X) y la variable objetivo (Y)
-    X = select(data, Not(target_col))   # Excluimos la columna de la clase
-    y = data[!, target_col]             # Columna de la clase
+    X = select(data, Not([:subject, :Activity]))
+    X = X[:, names(X, eltype(Float64))]  # Filtra solo las columnas numéricas
 
     # Crear una lista para almacenar los p-valores de cada característica
     p_values = []
@@ -52,10 +52,9 @@ function anova_filter(data::DataFrame, target_col::Symbol; alpha::Float64=0.05, 
 
     # Mostrar resultados
     if info
-        println("Características seleccionadas basadas en ANOVA:")
-        println(selected_features)
+        println("Características totales: ", length(names(X)))
+        println("Características seleccionadas basadas en ANOVA: ", length(selected_features))
     end
-    
     return selected_features
 end
 

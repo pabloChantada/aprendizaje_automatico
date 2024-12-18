@@ -163,7 +163,7 @@ end;
 # =========================
 # =========================
 
-function preparation_pipeline(info::Bool)
+function preparation_pipeline(info::Bool=false)
     # 1. Cargar datos y realizar descripción básica
     data = loadDataset()
     if info == true
@@ -184,7 +184,7 @@ function preparation_pipeline(info::Bool)
     train_data, test_data = HoldOut(clean_data)
     
     # 5. Preparar cross-validation
-    cv_indices = stratified_group_k_fold(train_data, 5)
+    cv_indices = stratified_group_k_fold(train_data, 2)
     
     # 6. Normalizar datos para cada fold
     normalized_folds = []
