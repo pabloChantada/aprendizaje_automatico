@@ -177,6 +177,9 @@ function preparation_pipeline(info::Bool=false)
         getNullValues(data, false) 
     end 
     
+    #=
+    Intercabiar estos dos
+    =#
     # 3. Preparar datos (rellenar nulos)
     clean_data = preprocessData(data)
     

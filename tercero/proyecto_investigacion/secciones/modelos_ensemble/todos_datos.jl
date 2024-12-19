@@ -21,7 +21,7 @@ using Plots
 using MLJ
 using XGBoost
 using LightGBM
-# using CatBoost
+using CatBoost
 
 @sk_import ensemble: RandomForestClassifier
 @sk_import ensemble: VotingClassifier
