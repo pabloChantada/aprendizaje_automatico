@@ -1,24 +1,6 @@
-- Comprobar que estamos eliminando el header al en el prepocesado, debe dar 561.
-
-- Para el tratado de nulos podemos:
-    2. Eliminar las filas:
-        - Al ser 10299 y solo haber como 30 filas con nulos (<0.1%)
-        podriamos simplemente eliminarlas
-
-- __Comprobar que los individuos quedan fuera en hold-out__
-
-- Continuar con la parte 3:
-    Comprobar adoboost, y imports de prediction
-
-- Mostrar el mejor de cada tecnica
-
-- En k-folds se separan 10% y despues se hace el k-folds con test distinto en cada iteracion
-    - Group kfold
-- Ajustar nulos sobre train, y la media usarla en nulos de test
-
-
-
-
+- Cuantos n-dim usar en las reduccion
+- Para el plot de la reduccion usamos el final o como
+- Ejecutar con todo el dataset
 
 
 # POSIBLES COSAS DE LA PARTE 2
